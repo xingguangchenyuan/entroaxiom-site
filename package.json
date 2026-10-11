@@ -1,0 +1,35 @@
+{
+  "name": "entroaxiom-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:demo": "cross-env VITE_CONTENT_SOURCE=demo vite",
+    "build": "tsc --noEmit && vite build",
+    "build:demo": "cross-env VITE_CONTENT_SOURCE=demo npm run build",
+    "preview": "vite preview",
+    "images": "node scripts/prepare-images.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "react-router-dom": "^6.30.0",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "cross-env": "^7.0.3",
+    "sharp": "^0.35.0",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.11"
+  }
+}

@@ -1,0 +1,265 @@
+/* ==========================================================================
+   reading.css — 阅读页正文排版（笔记/总结共用）
+   容器宽度由外层 .reading 控制（--reading-max）
+   ========================================================================== */
+
+.reading {
+  max-width: var(--reading-max);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--c-text);
+  overflow-wrap: anywhere; /* 长链接、长文件名合理换行，禁止撑破布局 */
+}
+
+/* ---- 段落 ---- */
+.reading > p {
+  margin: 0 0 var(--sp-5); /* 段间距，段首不缩进 */
+}
+
+/* ---- 标题层级 ---- */
+.reading h2 {
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  margin: var(--sp-8) 0 var(--sp-4);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.reading h3 {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-semibold);
+  line-height: 1.45;
+  margin: var(--sp-7) 0 var(--sp-3);
+}
+
+.reading h4,
+.reading h5,
+.reading h6 {
+  font-size: 1.02em;
+  font-weight: var(--fw-semibold);
+  margin: var(--sp-6) 0 var(--sp-2);
+}
+
+.reading h2:first-child,
+.reading h3:first-child,
+.reading h4:first-child {
+  margin-top: 0;
+}
+
+/* ---- 列表 ---- */
+.reading ul,
+.reading ol {
+  margin: 0 0 var(--sp-5);
+  padding-left: 1.6em;
+}
+
+.reading li {
+  margin: var(--sp-1) 0;
+}
+
+.reading li > ul,
+.reading li > ol {
+  margin-bottom: 0;
+}
+
+/* ---- 引用 ---- */
+.reading blockquote {
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-2) var(--sp-4);
+  border-left: 3px solid var(--c-accent);
+  background: var(--c-surface-sunken);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+  color: var(--c-text-muted);
+}
+
+.reading blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---- 链接 ---- */
+.reading a {
+  color: var(--c-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--c-border-strong);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.reading a:hover {
+  color: var(--c-accent-strong);
+  text-decoration-color: currentColor;
+}
+
+/* ---- 行内代码 ---- */
+.reading :not(pre) > code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+  font-size: 0.9em;
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 0.08em 0.4em;
+}
+
+/* ---- 代码块：等宽 + 浅底 + 横向滚动，不引入高亮库 ---- */
+.reading pre {
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-4);
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-control);
+  overflow-x: auto;
+  font-size: var(--fs-code);
+  line-height: 1.6;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+  tab-size: 4;
+}
+
+.reading pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* ---- 表格：仅容器内横向滚动 ---- */
+.reading .table-scroll {
+  margin: 0 0 var(--sp-5);
+  overflow-x: auto;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-control);
+}
+
+.reading table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-code);
+  line-height: 1.6;
+  min-width: 100%;
+}
+
+.reading th,
+.reading td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--c-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.reading tr:last-child td {
+  border-bottom: none;
+}
+
+.reading thead th {
+  background: var(--c-surface-sunken);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+.reading tbody tr:nth-child(even) {
+  background: rgb(244, 241, 236, 0.45); /* 舒缓的斑马行 */
+}
+
+/* ---- 图片 ---- */
+.reading .reading-image-wrap {
+  margin: 0 0 var(--sp-5);
+}
+
+.reading .reading-image-wrap img {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 放大入口：图片整体可点击 */
+.reading .reading-image-button {
+  display: block;
+  width: 100%;
+  max-width: 780px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: zoom-in;
+}
+
+.reading .reading-image-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--sp-4);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-panel);
+  background: var(--c-surface-sunken);
+  color: var(--c-text-muted);
+  font-size: var(--fs-list-meta);
+}
+
+.reading .reading-image-fallback svg {
+  color: var(--c-text-faint);
+}
+
+/* ---- 任务列表（remark-gfm） ---- */
+.reading .task-list-item {
+  list-style: none;
+}
+
+.reading .task-list-item input[type='checkbox'] {
+  margin-right: var(--sp-2);
+  accent-color: var(--c-accent);
+}
+
+/* ---- 分割线 ---- */
+.reading hr {
+  margin: var(--sp-7) 0;
+  border: none;
+  border-top: 1px solid var(--c-border);
+}
+
+/* ---- 阅读页页头 ---- */
+.reading-page-header {
+  margin-bottom: var(--sp-6);
+}
+
+.reading-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-5);
+  font-size: var(--fs-list-meta);
+  color: var(--c-text-muted);
+  text-decoration: none;
+}
+
+.reading-back-link:hover {
+  color: var(--c-accent-strong);
+  text-decoration: none;
+}
+
+.reading-title {
+  font-size: var(--fs-module-title);
+  font-weight: var(--fw-semibold);
+  line-height: 1.35;
+  margin-bottom: var(--sp-3);
+}
+
+.reading-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  font-size: var(--fs-list-meta);
+  color: var(--c-text-muted);
+}
+
+.reading-tag {
+  display: inline-block;
+  padding: 0 var(--sp-2);
+  background: var(--c-accent-soft);
+  color: var(--c-accent-strong);
+  border-radius: var(--r-pill);
+  font-size: 0.92em;
+}
