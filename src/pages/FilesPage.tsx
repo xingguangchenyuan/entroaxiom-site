@@ -36,7 +36,7 @@ export function FilesPage() {
   if (error) return <ErrorState />;
   if (files === null) {
     return (
-      <ContentPanel>
+      <ContentPanel world="earth">
         <div className="state-loading" role="status">
           <span className="state-loading-bar" />
         </div>
@@ -45,7 +45,7 @@ export function FilesPage() {
   }
 
   return (
-    <ContentPanel>
+    <ContentPanel world="earth">
       <div className="module-header">
         <h1 className="module-title">{moduleTitles.files}</h1>
         <DemoBadge />

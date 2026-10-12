@@ -6,7 +6,7 @@ import { ModuleList } from '../components/list/ModuleList';
 export function SummariesPage() {
   useDocumentTitle(moduleTitles.summaries);
   return (
-    <ContentPanel>
+    <ContentPanel world="mars">
       <ModuleList kind="summaries" />
     </ContentPanel>
   );

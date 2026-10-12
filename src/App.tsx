@@ -10,6 +10,7 @@ import { WallpaperLayer } from './components/layout/WallpaperLayer';
 import { WelcomeOverlay } from './components/welcome/WelcomeOverlay';
 import { ErrorBoundary } from './components/state/ErrorBoundary';
 import { wallpapers } from './config/wallpapers';
+import { useLocation } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { FilesPage } from './pages/FilesPage';
 import { NotesPage } from './pages/NotesPage';
@@ -25,6 +26,8 @@ export default function App() {
   const [welcomeGone, setWelcomeGone] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const reduced = usePrefersReducedMotion();
+  const { pathname } = useLocation();
+  const galaxyPage = pathname === '/' || ['/files', '/notes', '/summaries'].includes(pathname);
   const stageRef = useRef<HTMLDivElement>(null);
   useScrollRestore();
 
@@ -61,11 +64,11 @@ export default function App() {
     <ErrorBoundary>
       <SkipLink />
       <div
-        className="app-stage"
+        className={`app-stage${galaxyPage ? ' app-stage-galaxy' : ''}`}
         ref={stageRef}
         aria-hidden={welcomeActive || undefined}
       >
-        <WallpaperLayer config={wallpapers.site} />
+        {!galaxyPage && <WallpaperLayer config={wallpapers.site} />}
         <TopNav
           onNavigate={onNavigate}
           menuOpen={menuOpen}
@@ -73,7 +76,7 @@ export default function App() {
         />
         <MobileMenu open={menuOpen} onClose={onNavigate} />
 
-        <div className="shell">
+        <div className={`shell${galaxyPage ? ' shell-galaxy' : ''}`}>
           <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/files" element={<FilesPage />} />

@@ -6,6 +6,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/reading.css';
 import './styles/components.css';
+import './styles/galaxy.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

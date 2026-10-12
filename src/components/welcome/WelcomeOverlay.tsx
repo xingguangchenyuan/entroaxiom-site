@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { wallpapers, pickWallpaperTier, preloadWallpaper } from '../../config/wallpapers';
 import { welcomeCopy } from '../../config/site';
 import { WallpaperPicture } from '../layout/WallpaperPicture';
+import { AxiomMark } from '../layout/AxiomMark';
 
 interface Props {
   /** 是否正在淡出（等待 onClosed 卸载） */
@@ -32,13 +33,32 @@ export function WelcomeOverlay({ closing, onEnter, onClosed }: Props) {
       className={`welcome-overlay${closing ? ' welcome-overlay-closing' : ''}`}
       onTransitionEnd={handleTransitionEnd}
     >
-      <WallpaperPicture config={wallpapers.welcome} />
-      <div className="welcome-body">
-        <h1 className="welcome-title">{welcomeCopy.title}</h1>
-        <p className="welcome-sub">{welcomeCopy.sub}</p>
-        <button type="button" className="welcome-enter" onClick={onEnter}>
-          {welcomeCopy.enter}
-        </button>
+      <div className="welcome-art" aria-hidden="true">
+        <WallpaperPicture config={wallpapers.welcome} />
+      </div>
+      <div className="welcome-veil" aria-hidden="true" />
+      <div className="welcome-orbit welcome-orbit-one" aria-hidden="true" />
+      <div className="welcome-orbit welcome-orbit-two" aria-hidden="true" />
+      <div className="welcome-layout">
+        <div className="welcome-masthead" aria-hidden="true">
+          <AxiomMark className="welcome-mark" />
+          <span className="welcome-name">entroaxiom</span>
+        </div>
+        <div className="welcome-body">
+          <span className="welcome-pill" aria-hidden="true">
+            <span className="welcome-pill-dot" /> 从无序出发 · 寻找确定
+          </span>
+          <h1 className="welcome-title"><span>{welcomeCopy.title}</span></h1>
+          <p className="welcome-sub">{welcomeCopy.sub}</p>
+          <button type="button" className="welcome-enter" onClick={onEnter}>
+            <span>{welcomeCopy.enter}</span>
+          </button>
+        </div>
+        <div className="welcome-footer" aria-hidden="true">
+          <span>ENTROPY / AXIOM</span>
+          <span className="welcome-footer-line" />
+          <span>向未知，建立坐标</span>
+        </div>
       </div>
     </div>
   );

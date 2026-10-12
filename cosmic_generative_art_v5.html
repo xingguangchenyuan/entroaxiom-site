@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050506" id="themeColor">
+<title>Cosmic Glyphs — Generative Frontend Art</title>
+<style>
+:root{--bg:#050506;--fg:#eee;--dim:#8a8a8a;--ui-bg:#050506b8;--ui-line:#ffffff1c;--ui-hover:#ffffff12;--ui-on:#fff;--gold:#e5bf32;--paper:#e9e8e2;--ink:#111214}
+body[data-theme="paper"]{--bg:var(--paper);--fg:var(--ink);--dim:#77756e;--ui-bg:#e9e8e2d0;--ui-line:#1112141f;--ui-hover:#11121412;--ui-on:var(--ink)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{min-height:100svh;overflow-x:hidden;background:var(--bg);color:var(--fg);font-family:Inter,"Segoe UI",system-ui,sans-serif;transition:background .6s ease,color .6s ease}
+.scene{min-height:100svh;position:relative;overflow:hidden;display:grid;place-items:center}
+canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+canvas.stip,canvas.live{z-index:0}
+canvas.slow{animation:spin 320s linear infinite;will-change:transform}
+.art{width:min(94vw,88svh,900px);height:min(94vw,88svh,900px);position:relative;z-index:3;transition:transform .25s ease-out,opacity .28s ease;will-change:transform}
+.art.out{opacity:0}
+svg{width:100%;height:100%;overflow:visible;position:relative;z-index:1}
+.line{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.spin{transform-box:fill-box;transform-origin:center;animation:spin 40s linear infinite}
+.spin2{transform-box:fill-box;transform-origin:center;animation:spin 140s linear infinite reverse}
+.spin3{transform-box:fill-box;transform-origin:center;animation:spin 220s linear infinite}
+.pulse{transform-box:fill-box;transform-origin:center;animation:pulse 6s ease-in-out infinite}
+.flow{stroke-dasharray:3 10;animation:flow 3s linear infinite}
+.tw{animation:tw 4s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.03);opacity:.8}}
+@keyframes flow{to{stroke-dashoffset:-26}}
+@keyframes tw{50%{opacity:.35}}
+.grain{position:fixed;inset:-90px;z-index:9;pointer-events:none;opacity:.3;background-image:var(--g1);background-size:160px;animation:grain 1s steps(1) infinite}
+body[data-theme="paper"] .grain{background-image:var(--g2);opacity:.4}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-37px,23px)}40%{transform:translate(29px,-41px)}60%{transform:translate(-18px,-52px)}80%{transform:translate(44px,17px)}}
+.vignette{position:fixed;inset:0;z-index:8;pointer-events:none;background:radial-gradient(circle,transparent 38%,#000b 100%);transition:background .6s}
+body[data-theme="paper"] .vignette{background:radial-gradient(circle,transparent 55%,#8a877c40 100%)}
+.caption{position:fixed;z-index:10;left:50%;bottom:92px;transform:translateX(-50%);text-align:center;letter-spacing:.28em;pointer-events:none;white-space:nowrap}
+.caption b{font-weight:400;font-size:13px}
+.caption small{display:block;margin-top:8px;color:var(--dim);font-size:8px}
+.ui{position:fixed;z-index:20;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:2px;padding:6px;max-width:min(96vw,820px);overflow-x:auto;scrollbar-width:none;border:1px solid var(--ui-line);border-radius:999px;background:var(--ui-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.ui::-webkit-scrollbar{display:none}
+button{flex:none;border:0;background:transparent;color:var(--dim);padding:9px 12px;border-radius:999px;font:inherit;font-size:10px;letter-spacing:.12em;cursor:pointer;transition:background .2s,color .2s}
+button.active,button:hover{background:var(--ui-hover);color:var(--ui-on)}
+button:focus-visible{outline:1px solid var(--ui-on);outline-offset:-2px}
+@media(max-width:600px){.ui{bottom:max(14px,env(safe-area-inset-bottom))}.caption{bottom:80px}}
+@media(prefers-reduced-motion:reduce){.spin,.spin2,.spin3,.pulse,.flow,.tw,.grain,canvas.slow{animation:none}.art{transition:none}}
+</style>
+</head>
+<body data-theme="dark">
+<div class="scene" id="scene">
+<canvas class="stars" id="stars"></canvas>
+<canvas class="dust" id="dust"></canvas>
+<div class="art" id="art"></div>
+<div class="grain"></div>
+<div class="vignette"></div>
+<div class="caption"><b id="cap">ARMILLARY</b><small id="sub"></small></div>
+<nav class="ui" id="ui" aria-label="Modes"></nav>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const art=$("#art"),scene=$("#scene"),capEl=$("#cap"),subEl=$("#sub"),ui=$("#ui");
+const S=$("#stars"),D=$("#dust"),sx=S.getContext("2d"),dx=D.getContext("2d");
+const RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
+const TAU=Math.PI*2,R=(a,b)=>a+Math.random()*(b-a),f1=n=>(+n).toFixed(1);
+const BONE="233,232,226",GOLD="229,191,50",INK="17,18,20",rgba=(c,a)=>`rgba(${c},${a})`;
+let W=innerWidth,H=innerHeight,dpr=1,stars=[],dust=[],cur=null,raf=0,liveFn=null,liveCtx=null;
+
+/* ---------- 工具 ---------- */
+function rng(s){return()=>{s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function mk(seed){const f=rng(seed),r=(a,b)=>a+f()*(b-a);r.f=f;return r}
+function makeNoise(seed){const f=rng(seed),g=Array.from({length:289},()=>f()),sm=t=>t*t*(3-2*t);
+ return(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=sm(x-xi),yf=sm(y-yi),h=(i,j)=>g[(i&15)+(j&15)*17];
+  const a=h(xi,yi),b=h(xi+1,yi),c=h(xi,yi+1),d=h(xi+1,yi+1);return(a+(b-a)*xf)*(1-yf)+(c+(d-c)*xf)*yf}}
+const gauss=r=>(r.f()+r.f()+r.f()+r.f()-2)*1.73;
+const norm3=(x,y,z)=>{const l=Math.hypot(x,y,z);return[x/l,y/l,z/l]};
+const dot=(c,x,y,s,o)=>{c.globalAlpha=o;c.beginPath();c.arc(x,y,s,0,TAU);c.fill()};
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+function glow(ctx,x,y,rad,c,a){const g=ctx.createRadialGradient(x,y,0,x,y,rad);g.addColorStop(0,`rgba(${c},${a})`);g.addColorStop(.4,`rgba(${c},${a*.32})`);g.addColorStop(1,`rgba(${c},0)`);ctx.fillStyle=g;ctx.fillRect(x-rad,y-rad,rad*2,rad*2)}
+/* 抽象符文：在 3x3 点阵上随机连 2–4 笔，神秘但不是任何真实文字 */
+function runeSegs(r){const g=[[-.5,-1],[0,-1],[.5,-1],[-.5,0],[0,0],[.5,0],[-.5,1],[0,1],[.5,1]],n=2+((r.f()*3)|0),segs=[];let c=(r.f()*9)|0;
+ for(let i=0;i<n;i++){let nx=(r.f()*9)|0;if(nx===c)nx=(nx+4)%9;segs.push([g[c],g[nx]]);c=nx}return segs}
+function runePath(ctx,segs,x,y,s,ang){ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(s,s);for(const[a,b]of segs){ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1])}ctx.restore()}
+function runeSvg(segs,x,y,s,deg,stroke,op){return`<path class="line" vector-effect="non-scaling-stroke" transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(deg)}) scale(${f1(s)})" d="${segs.map(([a,b])=>`M${a[0]} ${a[1]}L${b[0]} ${b[1]}`).join("")}" stroke="${stroke}" opacity="${op}"/>`}
+
+/* ---------- 背景层 ---------- */
+function sizeCanvas(c,x){c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0)}
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);sizeCanvas(S,sx);sizeCanvas(D,dx);seed();if(RM)backdrop(0)}
+function seed(){
+ stars=Array.from({length:Math.min(300,Math.floor(W*H/6000))},()=>({x:R(0,W),y:R(0,H),r:R(.15,1.2),a:R(.15,.8),p:R(0,6.28)}));
+ dust=Array.from({length:Math.min(900,Math.floor(W*H/2200))},()=>({x:R(0,W),y:R(0,H),r:R(.2,1.5),vx:R(-.06,.06),vy:R(-.04,.04),a:R(.05,.4)}));
+}
+function backdrop(t){
+ sx.clearRect(0,0,W,H);dx.clearRect(0,0,W,H);
+ if(!cur)return;
+ if(cur.theme==="dark"){sx.fillStyle="#fff";
+  for(const p of stars){sx.globalAlpha=p.a*(RM?1:.55+.45*Math.sin(t*.0014+p.p));sx.beginPath();sx.arc(p.x,p.y,p.r,0,TAU);sx.fill()}}
+ if(cur.dust){const paper=cur.theme==="paper";dx.fillStyle=paper?"#111214":"#e9e8e2";
+  for(const p of dust){if(!RM){p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0}
+   dx.globalAlpha=p.a*(paper?.7:1);dx.beginPath();dx.arc(p.x,p.y,p.r,0,TAU);dx.fill()}}
+}
+let tx=0,ty=0,mx=0,my=0;
+addEventListener("pointermove",e=>{tx=e.clientX/W-.5;ty=e.clientY/H-.5});
+function drawLive(t){const c=liveCtx;c.setTransform(2,0,0,2,0,0);c.clearRect(0,0,800,800);c.globalCompositeOperation="source-over";c.globalAlpha=1;c.lineCap="butt";liveFn(c,t)}
+function frame(t){
+ mx+=(tx-mx)*.04;my+=(ty-my)*.04;
+ art.style.transform=`translate3d(${(mx*16).toFixed(2)}px,${(my*16).toFixed(2)}px,0)`;
+ backdrop(t);if(liveFn)drawLive(t);raf=requestAnimationFrame(frame)
+}
+addEventListener("resize",resize);
+(function grainTiles(){
+ const mkTile=rgb=>{const c=document.createElement("canvas");c.width=c.height=160;const x=c.getContext("2d"),im=x.createImageData(160,160);
+  for(let i=0;i<im.data.length;i+=4){im.data[i]=rgb[0];im.data[i+1]=rgb[1];im.data[i+2]=rgb[2];im.data[i+3]=Math.random()<.22?Math.random()*75:0}
+  x.putImageData(im,0,0);return`url(${c.toDataURL()})`};
+ document.documentElement.style.setProperty("--g1",mkTile([255,255,255]));
+ document.documentElement.style.setProperty("--g2",mkTile([17,18,20]));
+})();
+
+/* ---------- 场景装配：SVG（矢量线稿）+ 可选静态 canvas（点刻/星轨）+ 可选实时 canvas（逐帧动画） ---------- */
+function baseDefs(){return `
+<defs>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="8"/></filter>
+</defs>`}
+function setScene(body,paint,o={}){
+ liveFn=null;liveCtx=null;
+ art.innerHTML=`${paint?'<canvas class="stip"></canvas>':""}${o.live?'<canvas class="live"></canvas>':""}<svg viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${cur.cap}">${baseDefs()}${body}</svg>`;
+ if(paint){const c=art.querySelector("canvas.stip");c.width=c.height=1600;const x=c.getContext("2d");x.scale(2,2);paint(x);
+  if(o.origin)c.style.transformOrigin=o.origin;if(o.spin)c.classList.add("slow")}
+ if(o.live){const c=art.querySelector("canvas.live");c.width=c.height=1600;liveCtx=c.getContext("2d");liveFn=o.live;if(RM)drawLive(0)}
+ if(RM)art.querySelector("svg").pauseAnimations();
+}
+const anchor=r=>`<circle r="${r}" fill="none" stroke="none"/>`;
+function ticks(Rad,n,long,short,every,stroke,op){let d="";
+ for(let i=0;i<n;i++){const a=i/n*TAU,l=i%every===0?long:short,c=Math.cos(a),s=Math.sin(a);d+=`M${f1(c*Rad)} ${f1(s*Rad)}L${f1(c*(Rad-l))} ${f1(s*(Rad-l))}`}
+ return`<path class="line" d="${d}" stroke="${stroke}" opacity="${op}"/>`}
+function orbit(rx,ry,rot,dur,rad,fill,delay=0){
+ const p=`M${rx} 0A${rx} ${ry} 0 1 1 ${-rx} 0A${rx} ${ry} 0 1 1 ${rx} 0`;
+ return`<g transform="rotate(${rot})"><circle r="${rad}" fill="${fill}"><animateMotion dur="${dur}s" begin="${-delay}s" repeatCount="indefinite" path="${p}"/></circle></g>`}
+function stippleBall(ctx,r,vn,cx,cy,Rad,L,o){
+ const{n,base=.1,hi=1,gam=1.15,d0=.35,d1=1,skip}=o;
+ for(let i=0;i<n;i++){
+  const a=r.f()*TAU,d=Math.sqrt(r.f())*Rad,x=Math.cos(a)*d,y=Math.sin(a)*d;
+  if(skip&&skip(x,y))continue;
+  const nx=x/Rad,ny=y/Rad,nz=Math.sqrt(Math.max(0,1-nx*nx-ny*ny));
+  const lit=clamp(nx*L[0]+ny*L[1]+nz*L[2]);
+  let p=base+(hi-base)*Math.pow(1-lit,gam);
+  p*=.8+.45*vn(nx*3.2+cx*.01,ny*3.2+cy*.01);
+  if(r.f()<Math.pow(Math.min(1,p),1.5))dot(ctx,cx+x,cy+y,r(d0,d1),r(.5,.95));
+ }
+}
+
+/* ============================================================
+   01 ARMILLARY 浑天仪：真 3D 旋转的套环，刻度 + 符文 + 金色黄道 + 尘盘
+   ============================================================ */
+function armillary(){
+ const r=mk(101),runes=Array.from({length:72},()=>runeSegs(r));
+ const dust=Array.from({length:1200},()=>{const a=r.f()*TAU,rad=r(125,345)+gauss(r)*10;return[Math.cos(a)*rad,gauss(r)*(5+rad*.022),Math.sin(a)*rad,r(.4,1.5),r(.25,.9)]});
+ const F=1500,R0=300,tilt=.41;
+ const eq=Rr=>th=>[Rr*Math.cos(th),0,Rr*Math.sin(th)];
+ const mer=(Rr,az)=>th=>[Rr*Math.cos(th)*Math.cos(az),Rr*Math.sin(th),Rr*Math.cos(th)*Math.sin(az)];
+ const lat=(Rr,l)=>th=>[Rr*Math.cos(l)*Math.cos(th),Rr*Math.sin(l),Rr*Math.cos(l)*Math.sin(th)];
+ const ecl=(Rr,tl)=>th=>[Rr*Math.cos(th)*Math.cos(tl),Rr*Math.cos(th)*Math.sin(tl),Rr*Math.sin(th)];
+ setScene(`<g transform="translate(400 400)"><circle class="line" r="392" stroke="#e9e8e2" opacity=".14"/><circle class="line" r="397" stroke="#e5bf32" opacity=".3" stroke-dasharray="1 9"/></g>`,null,{live:(ctx,t)=>{
+  const yaw=t*.00006+.6,pit=.5+.07*Math.sin(t*.00017),cyw=Math.cos(yaw),syw=Math.sin(yaw),cp=Math.cos(pit),sp=Math.sin(pit);
+  const P=(x,y,z)=>{const x1=x*cyw+z*syw,z1=-x*syw+z*cyw,y2=y*cp-z1*sp,z2=y*sp+z1*cp,s=F/(F-z2);return{x:400+x1*s,y:400-y2*s,z:z2,s}};
+  const pr=f=>th=>{const q=f(th);return P(q[0],q[1],q[2])};
+  const ring=(fn,n,col,w,aF,aB)=>{const pf=new Path2D,pb=new Path2D;let p=fn(0);
+   for(let i=1;i<=n;i++){const q=fn(i/n*TAU),pa=(p.z+q.z)>0?pf:pb;pa.moveTo(p.x,p.y);pa.lineTo(q.x,q.y);p=q}
+   ctx.lineWidth=w;ctx.strokeStyle=rgba(col,aB);ctx.stroke(pb);ctx.strokeStyle=rgba(col,aF);ctx.stroke(pf)};
+  const tickRing=(f,Rr,n,len,every,col,w,aF,aB)=>{const pf=new Path2D,pb=new Path2D;
+   for(let i=0;i<n;i++){const L=f(i/n*TAU),l=i%every===0?len*2:len,k=1-l/Rr,a=P(L[0],L[1],L[2]),b=P(L[0]*k,L[1]*k,L[2]*k),pa=a.z>0?pf:pb;pa.moveTo(a.x,a.y);pa.lineTo(b.x,b.y)}
+   ctx.lineWidth=w;ctx.strokeStyle=rgba(col,aB);ctx.stroke(pb);ctx.strokeStyle=rgba(col,aF);ctx.stroke(pf)};
+  ctx.globalCompositeOperation="lighter";glow(ctx,400,400,190,GOLD,.28);ctx.globalCompositeOperation="source-over";
+  // 尘盘
+  for(const d of dust){const p=P(d[0],d[1],d[2]),a=d[4]*(.25+.75*clamp((p.z+345)/690));ctx.fillStyle=rgba(BONE,a);ctx.fillRect(p.x,p.y,d[3]*p.s,d[3]*p.s)}
+  // 子午圈与纬圈
+  for(let k=0;k<6;k++)ring(pr(mer(R0,k*Math.PI/6)),180,BONE,.7,.5,.12);
+  for(const l of[-.87,-.41,.41,.87])ring(pr(lat(R0,l)),140,BONE,.6,.4,.1);
+  // 赤道 + 多层刻度
+  ring(pr(eq(R0)),220,BONE,1.2,.95,.28);tickRing(eq(R0),R0,360,5,10,BONE,.7,.85,.2);
+  ring(pr(eq(346)),220,BONE,.6,.55,.15);tickRing(eq(346),346,144,6,12,BONE,.6,.6,.14);
+  ring(pr(eq(374)),240,BONE,.9,.7,.18);tickRing(eq(374),374,72,7,6,GOLD,.8,.7,.16);
+  // 金色黄道
+  ring(pr(ecl(330,tilt)),240,GOLD,1.7,.95,.3);tickRing(ecl(330,tilt),330,120,7,10,GOLD,.8,.8,.2);
+  ring(pr(ecl(255,-.78)),200,BONE,.9,.55,.14);tickRing(ecl(255,-.78),255,96,5,8,BONE,.6,.5,.12);
+  // 符文环
+  ctx.lineWidth=.9;
+  for(let i=0;i<72;i++){const th=i/72*TAU,a=P(374*Math.cos(th),0,374*Math.sin(th)),b=P(374*Math.cos(th+.02),0,374*Math.sin(th+.02));
+   ctx.beginPath();runePath(ctx,runes[i],a.x+ (a.x-400)*.045,a.y+(a.y-400)*.045,6.5*a.s,Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2);
+   ctx.strokeStyle=rgba(BONE,.12+.5*clamp((a.z+374)/748));ctx.stroke()}
+  // 极轴
+  const n0=P(0,-440,0),n1=P(0,440,0),gr=ctx.createLinearGradient(n0.x,n0.y,n1.x,n1.y);
+  gr.addColorStop(0,rgba(GOLD,0));gr.addColorStop(.5,rgba(GOLD,.55));gr.addColorStop(1,rgba(GOLD,0));
+  ctx.strokeStyle=gr;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(n0.x,n0.y);ctx.lineTo(n1.x,n1.y);ctx.stroke();
+  // 光珠
+  ctx.globalCompositeOperation="lighter";
+  const beads=[[ecl(330,tilt),t*.00032,GOLD,34],[eq(R0),-t*.00021,BONE,24],[mer(R0,Math.PI/3),t*.00026+1,BONE,22],[ecl(255,-.78),t*.0004+2,GOLD,22]];
+  for(const[f,th,c,g]of beads){const q=pr(f)(th);glow(ctx,q.x,q.y,g*q.s,c,.9)}
+  ctx.globalCompositeOperation="source-over";
+  for(const[f,th]of beads){const q=pr(f)(th);ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(q.x,q.y,3.2*q.s,0,TAU);ctx.fill()}
+  // 核心
+  const g2=ctx.createRadialGradient(392,390,2,400,400,40);g2.addColorStop(0,"#fff");g2.addColorStop(.7,"#e9e8e2");g2.addColorStop(1,"#8d8f8d");
+  ctx.fillStyle=g2;ctx.beginPath();ctx.arc(400,400,38,0,TAU);ctx.fill();
+  ctx.strokeStyle=rgba(BONE,.6);ctx.lineWidth=.8;ctx.beginPath();ctx.arc(400,400,48,0,TAU);ctx.stroke();
+  ctx.setLineDash([1,5]);ctx.strokeStyle=rgba(GOLD,.7);ctx.beginPath();ctx.arc(400,400,62,0,TAU);ctx.stroke();ctx.setLineDash([]);
+ }})
+}
+
+/* ============================================================
+   02 LENS 引力透镜：数值积分的弯曲光线，爱因斯坦环，光子尘
+   ============================================================ */
+function lens(){
+ const r=mk(202),cx=400,cy=400,K=115,RS=30;
+ let dec=`<g transform="translate(400 400)">
+<g class="spin2" opacity=".7">${anchor(385)}${ticks(378,180,12,5,10,"#e9e8e2",.55)}<circle class="line" r="378" stroke="#e9e8e2" opacity=".35"/></g>
+<circle class="line" r="326" stroke="#e5bf32" opacity=".4" stroke-dasharray="1 7"/>
+<circle class="line" r="146" stroke="#e9e8e2" opacity=".22" stroke-dasharray="2 6"/>
+<path class="line" d="M-24 0H24M0-24V24" stroke="#e9e8e2" opacity=".5"/>
+${[0,90,180,270].map(a=>`<path d="M0 -392L5 -382L0 -372L-5 -382Z" fill="#e5bf32" opacity=".85" transform="rotate(${a})"/>`).join("")}
+</g>`;
+ setScene(dec,ctx=>{
+  const trace=(b,ang)=>{const ca=Math.cos(ang),sa=Math.sin(ang);let x=-ca*540-sa*b,y=-sa*540+ca*b,vx=ca,vy=sa;
+   ctx.beginPath();ctx.moveTo(cx+x,cy+y);
+   for(let i=0;i<2200;i++){const d2=x*x+y*y,d=Math.sqrt(d2);if(d<RS)break;const a=K/d2;vx-=x/d*a;vy-=y/d*a;const sp=Math.hypot(vx,vy);vx/=sp;vy/=sp;x+=vx*1.7;y+=vy*1.7;ctx.lineTo(cx+x,cy+y);if(d>640&&i>60)break}
+   ctx.stroke()};
+  ctx.globalCompositeOperation="lighter";ctx.lineWidth=.7;
+  for(const ang of[0,Math.PI,Math.PI/2+.1,Math.PI*1.5+.1]){
+   for(let b=-420;b<=420;b+=7){const ab=Math.abs(b);if(ab<RS*.8)continue;
+    const gold=ab>56&&ab<84&&ab%2<1.5;ctx.strokeStyle=gold?rgba(GOLD,.55):rgba(BONE,Math.max(.04,.27-ab/2200));
+    ctx.lineWidth=gold?.9:.6;trace(b,ang)}}
+  // 爱因斯坦环
+  ctx.lineWidth=7;ctx.strokeStyle=rgba(GOLD,.1);ctx.beginPath();ctx.arc(cx,cy,86,0,TAU);ctx.stroke();
+  ctx.lineWidth=2.4;ctx.strokeStyle=rgba(GOLD,.4);ctx.beginPath();ctx.arc(cx,cy,86,0,TAU);ctx.stroke();
+  ctx.lineWidth=.8;ctx.strokeStyle=rgba("255,246,210",.85);ctx.beginPath();ctx.arc(cx,cy,86,0,TAU);ctx.stroke();
+  // 光子尘
+  for(let i=0;i<4200;i++){const a=r.f()*TAU,d=86+gauss(r)*r(4,22);ctx.fillStyle=rgba(r.f()<.4?GOLD:BONE,r(.15,.8));const s=r(.3,1.1);ctx.fillRect(cx+Math.cos(a)*d,cy+Math.sin(a)*d,s,s)}
+  glow(ctx,cx,cy,170,GOLD,.22);
+  // 视界
+  ctx.globalCompositeOperation="source-over";
+  ctx.fillStyle="#000";ctx.beginPath();ctx.arc(cx,cy,RS+7,0,TAU);ctx.fill();
+  ctx.strokeStyle=rgba(BONE,.95);ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(cx,cy,RS+7,0,TAU);ctx.stroke();
+  for(const[rr,a,dash]of[[56,.4,[]],[120,.2,[3,6]],[200,.14,[1,8]]]){ctx.setLineDash(dash);ctx.strokeStyle=rgba(BONE,a);ctx.lineWidth=.8;ctx.beginPath();ctx.arc(cx,cy,rr,0,TAU);ctx.stroke()}
+  ctx.setLineDash([]);
+  // 边缘渐隐
+  ctx.globalCompositeOperation="destination-in";const m=ctx.createRadialGradient(cx,cy,260,cx,cy,400);m.addColorStop(0,"#000");m.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=m;ctx.fillRect(0,0,800,800);
+ },{spin:true});
+}
+
+/* ============================================================
+   03 ECLIPSE 日冕：纸底点刻，日冕流光、钻石环、仪器边框
+   ============================================================ */
+function eclipse(){
+ const r=mk(303),vn=makeNoise(5),cx=400,cy=392,Rm=112,dAng=-.85;
+ const fr=`<path class="line" d="M48 100V48H100M700 48H752V100M752 700V752H700M100 752H48V700" stroke="#111214" stroke-width="1.2" opacity=".6"/>
+${[[48,400],[752,400],[400,48],[400,752]].map(([x,y])=>`<path class="line" d="M${x-9} ${y}H${x+9}M${x} ${y-9}V${y+9}" stroke="#111214" opacity=".5"/>`).join("")}`;
+ setScene(`${fr}<g transform="translate(${cx} ${cy})">
+<g class="spin2" opacity=".6">${anchor(372)}${ticks(366,144,10,4,12,"#111214",.55)}</g>
+<circle class="line" r="156" stroke="#111214" opacity=".35" stroke-dasharray="1 6"/>
+<circle class="line" r="228" stroke="#111214" opacity=".3" stroke-dasharray="1 8"/>
+<circle class="line" r="306" stroke="#111214" opacity=".28" stroke-dasharray="1 10"/>
+<path d="M${f1(Math.cos(dAng)*(Rm+3))} ${f1(Math.sin(dAng)*(Rm+3)-9)}L${f1(Math.cos(dAng)*(Rm+3)+6)} ${f1(Math.sin(dAng)*(Rm+3))}L${f1(Math.cos(dAng)*(Rm+3))} ${f1(Math.sin(dAng)*(Rm+3)+9)}L${f1(Math.cos(dAng)*(Rm+3)-6)} ${f1(Math.sin(dAng)*(Rm+3))}Z" fill="#b8921a"/>
+</g>`,ctx=>{
+  ctx.fillStyle="#111214";
+  const lumps=[[.35,.2,1],[1.9,.16,.9],[3.3,.24,1],[4.5,.18,.8],[5.7,.15,.7],[2.7,.08,.5],[.95,.07,.45],[4.0,.07,.4]];
+  const lump=a=>{let v=0;for(const[l,w,k]of lumps){const d=Math.abs(((a-l+Math.PI)%TAU+TAU)%TAU-Math.PI);v+=k*Math.exp(-d*d/(2*w*w))}return v};
+  for(let i=0;i<190000;i++){
+   const a=r.f()*TAU,rad=Rm+Math.pow(r.f(),2.3)*330,lv=lump(a);
+   const e=1.9-.9*Math.min(1,lv),fall=Math.pow(Rm/rad,e),nz=.55+.9*vn(a*2.2+3,rad*.018);
+   let p=(.1+lv)*fall*nz*1.15;
+   const dd=Math.abs(((a-dAng+Math.PI)%TAU+TAU)%TAU-Math.PI);if(dd<.1&&rad<Rm+36)continue;
+   if(r.f()<Math.min(1,p)){const s=rad<Rm+25?r(.4,1.1):r(.25,.8);dot(ctx,cx+Math.cos(a)*rad,cy+Math.sin(a)*rad,s,r(.4,.95))}
+  }
+  // 远景稀疏点 + 星
+  for(let i=0;i<1800;i++){const a=r.f()*TAU,d=140+Math.pow(r.f(),1.5)*320;dot(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,r(.25,.6),r(.1,.35))}
+  for(let i=0;i<40;i++){const a=r.f()*TAU,d=r(150,380);dot(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,r(1,2.6),r(.6,1))}
+  // 月面
+  ctx.globalAlpha=1;ctx.beginPath();ctx.arc(cx,cy,Rm,0,TAU);ctx.fillStyle="#111214";ctx.fill();
+  ctx.fillStyle="#e9e8e2";for(let i=0;i<5200;i++){const a=r.f()*TAU,d=Rm*(1-Math.pow(r.f(),3.2)*.22);if(Math.abs(((a-dAng+Math.PI)%TAU+TAU)%TAU-Math.PI)>1.6&&r.f()<.8)continue;dot(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,r(.25,.6),r(.08,.3))}
+  ctx.strokeStyle="#e9e8e2";ctx.lineWidth=2.4;ctx.globalAlpha=1;ctx.beginPath();ctx.arc(cx,cy,Rm+2.4,0,TAU);ctx.stroke();
+ })
+}
+
+/* ============================================================
+   04 PORTAL 传送门：七边形隧道无限深入，金色光芒，符文外环
+   ============================================================ */
+function portal(){
+ const r=mk(404),rs=Array.from({length:48},()=>runeSegs(r));
+ const rays=Array.from({length:46},()=>({a:r(0,TAU),l:r(120,400),p:r(0,6.28),w:r(.4,1.2)}));
+ let rim="";for(let i=0;i<48;i++){const a=i/48*TAU;rim+=runeSvg(rs[i],Math.cos(a)*350,Math.sin(a)*350,7,a*180/Math.PI+90,"#e9e8e2",.55)}
+ const body=`<g transform="translate(400 400)">
+<circle class="line" r="392" stroke="#e9e8e2" opacity=".5"/><circle class="line" r="384" stroke="#e5bf32" opacity=".55" stroke-dasharray="1 7"/>
+<circle class="line" r="326" stroke="#e9e8e2" opacity=".3"/>
+<g class="spin2" opacity=".9">${anchor(360)}${rim}</g>
+${ticks(392,96,0,0,1,"#fff",0)}
+<path class="line" d="M-392 0H-330M330 0H392M0-392V-330M0 330V392" stroke="#e5bf32" stroke-width="2" opacity=".8"/>
+</g>`;
+ setScene(body,null,{live:(ctx,t)=>{
+  const N=46,SIDES=7,ph=(t*.00011)%1,zs=[];
+  for(let k=0;k<N;k++)zs.push([(k+ph)/N,k]);zs.sort((a,b)=>a[0]-b[0]);
+  const rad=z=>6+322*Math.pow(z,2.2),rot=z=>z*2.5+t*.00005;
+  const V=zs.map(([z])=>{const R_=rad(z),o=rot(z),vs=[];for(let i=0;i<SIDES;i++){const a=o+i/SIDES*TAU;vs.push([400+Math.cos(a)*R_,400+Math.sin(a)*R_])}return vs});
+  ctx.globalCompositeOperation="lighter";
+  // 光芒
+  for(const q of rays){const fl=.5+.5*Math.sin(t*.0008*q.w+q.p),g=ctx.createLinearGradient(400,400,400+Math.cos(q.a)*q.l,400+Math.sin(q.a)*q.l);
+   g.addColorStop(0,rgba(GOLD,.28*fl));g.addColorStop(1,rgba(GOLD,0));ctx.strokeStyle=g;ctx.lineWidth=.8*q.w;ctx.beginPath();ctx.moveTo(400+Math.cos(q.a)*12,400+Math.sin(q.a)*12);ctx.lineTo(400+Math.cos(q.a)*q.l,400+Math.sin(q.a)*q.l);ctx.stroke()}
+  // 纵向连线
+  ctx.lineWidth=.6;
+  for(let j=0;j<zs.length-1;j++){const z=zs[j][0],a=clamp(z*8)*clamp((1-z)*6)*.5;if(a<.01)continue;ctx.strokeStyle=rgba(BONE,a*(.3+z));ctx.beginPath();
+   for(let i=0;i<SIDES;i++){ctx.moveTo(V[j][i][0],V[j][i][1]);ctx.lineTo(V[j+1][i][0],V[j+1][i][1])}ctx.stroke()}
+  // 多边形环
+  for(let j=0;j<zs.length;j++){const z=zs[j][0],k=zs[j][1],a=clamp(z*8)*clamp((1-z)*6),g=k%6===0;
+   ctx.lineWidth=.5+2.4*z;ctx.strokeStyle=g?rgba(GOLD,.9*a):rgba(BONE,(.2+.7*z)*a);ctx.beginPath();
+   for(let i=0;i<SIDES;i++){const v=V[j][i];i?ctx.lineTo(v[0],v[1]):ctx.moveTo(v[0],v[1])}ctx.closePath();ctx.stroke()}
+  glow(ctx,400,400,230,GOLD,.9);glow(ctx,400,400,70,"255,250,230",1);
+  ctx.globalCompositeOperation="source-over";ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(400,400,3.5,0,TAU);ctx.fill();
+ }})
+}
+
+/* ============================================================
+   05 MERIDIAN 星轨：围绕极星缓慢转动的长曝光星轨，山脊与石碑
+   ============================================================ */
+function meridian(){
+ const r=mk(505),vn=makeNoise(55),px=400,py=330;
+ const ridgeLine=(base,amp,f,seedx,fine,first)=>{let d="";for(let x=-20;x<=820;x+=6)d+=`${x===-20?first:"L"}${x} ${f1(base-amp*Math.pow(vn(x*f+seedx,2),1.35)-fine*vn(x*.07,9))}`;return d};
+ const ridge=(base,amp,f,seedx,fine)=>`M-20 820`+ridgeLine(base,amp,f,seedx,fine,"L")+`L820 820Z`;
+ const yAt=x=>665-85*Math.pow(vn(x*.011+7,2),1.35)-14*vn(x*.07,9),mxp=556,mb=yAt(mxp);
+ const body=`<path d="${ridge(610,80,.008,1,10)}" fill="#0a0a0c"/>
+<path d="${ridge(665,85,.011,7,14)}" fill="#020203"/>
+<path class="line" d="${ridgeLine(665,85,.011,7,14,"M")}" stroke="#e9e8e2" stroke-width=".7" opacity=".4"/>
+<path d="M${mxp-15} ${f1(mb+6)}L${mxp-9} ${f1(mb-212)}L${mxp+9} ${f1(mb-218)}L${mxp+15} ${f1(mb+6)}Z" fill="#010102" stroke="#e9e8e2" stroke-width=".6" stroke-opacity=".5"/>
+<path class="line" d="M${mxp+2} ${f1(mb-185)}V${f1(mb-70)}" stroke="#e5bf32" stroke-width="1.6" filter="url(#glow)"/>
+<path class="line" d="M${mxp+2} ${f1(mb-185)}V${f1(mb-70)}" stroke="#fff" stroke-width=".6"/>`;
+ setScene(body,ctx=>{
+  ctx.lineCap="round";
+  for(let i=0;i<2000;i++){const rad=Math.pow(r.f(),.8)*330+4,a0=r.f()*TAU,fade=1-Math.pow(rad/334,3),bright=Math.pow(r.f(),3.4);
+   ctx.globalAlpha=Math.max(0,fade)*(.07+.8*bright);ctx.strokeStyle=bright>.6&&r.f()<.4?"#e5bf32":"#e9e8e2";ctx.lineWidth=.3+bright*1.3;
+   ctx.beginPath();ctx.arc(px,py,rad,a0,a0+1.2);ctx.stroke()}
+  ctx.globalAlpha=1;ctx.globalCompositeOperation="lighter";glow(ctx,px,py,70,GOLD,.5);glow(ctx,px,py,14,"255,255,255",1);
+  ctx.globalCompositeOperation="source-over";ctx.strokeStyle="#fff";ctx.lineWidth=.8;ctx.beginPath();
+  ctx.moveTo(px-28,py);ctx.lineTo(px+28,py);ctx.moveTo(px,py-28);ctx.lineTo(px,py+28);ctx.stroke();
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(px,py,2.2,0,TAU);ctx.fill();
+ },{spin:true,origin:"50% 41.25%"})
+}
+
+/* ============================================================
+   06 PHASE 月相：纸底点刻，一颗受光球 + 一圈月相 + 符文环 + 墨雾
+   ============================================================ */
+function phase(){
+ const r=mk(6),vn=makeNoise(33),rn=mk(66),cx=400,cy=330,OR=300,L=a=>norm3(Math.sin(a),-.08,Math.cos(a));
+ const runes=Array.from({length:60},()=>runeSegs(rn));
+ setScene(`<g transform="translate(${cx} ${cy})">
+<g class="spin2" opacity=".6">${anchor(345)}${ticks(326,72,9,4,6,"#111214",.5)}</g>
+<circle class="line" r="198" stroke="#111214" opacity=".28" stroke-dasharray="1 6"/>
+${orbit(OR,OR,0,70,3.6,"#111214")}
+</g>
+<path class="line" d="M48 100V48H100M700 48H752M752 700V752H700M100 752H48V700" stroke="#111214" stroke-width="1.1" opacity=".5"/>`,ctx=>{
+  ctx.fillStyle="#111214";
+  // 墨雾：两条斜向的稀疏点云
+  for(let i=0;i<60000;i++){const x=r(0,800),y=r(0,800);if(Math.hypot(x-cx,y-cy)<165)continue;
+   const u1=(x-y*.55-60)/230,u2=(x-y*.55-440)/190,band=Math.exp(-u1*u1)+.7*Math.exp(-u2*u2),d=band*(.25+1.1*vn(x*.012,y*.012));
+   if(r.f()<d*.16)dot(ctx,x,y,r(.25,.75),r(.06,.3))}
+  stippleBall(ctx,r,vn,cx,cy,150,L(1.25),{n:95000,base:.05,hi:.82,gam:1.2,d0:.4,d1:1.05});
+  const sp=[];for(let i=0;i<9;i++){const th=(30+120*i/8)*Math.PI/180;sp.push([cx+Math.cos(th)*OR,cy+Math.sin(th)*OR,Math.PI-i*Math.PI/4])}
+  for(const[x,y,a]of sp)stippleBall(ctx,r,vn,x,y,26,L(a),{n:5200,base:.05,hi:.8,gam:1.2,d0:.3,d1:.75});
+  for(let a=0;a<360;a+=1.5){const q=a*Math.PI/180,x=cx+Math.cos(q)*OR,y=cy+Math.sin(q)*OR;
+   if(sp.some(s=>Math.hypot(s[0]-x,s[1]-y)<34))continue;dot(ctx,x,y,.6,.55)}
+  // 符文环
+  ctx.strokeStyle="#111214";ctx.lineWidth=.8;ctx.globalAlpha=.6;
+  for(let i=0;i<60;i++){const a=i/60*TAU+.03,x=cx+Math.cos(a)*352,y=cy+Math.sin(a)*352;if(y<14)continue;ctx.beginPath();runePath(ctx,runes[i],x,y,5.5,a+Math.PI/2);ctx.stroke()}
+  ctx.globalAlpha=1;
+  for(let i=0;i<1400;i++){const x=r(20,780),y=r(20,780);if(Math.hypot(x-cx,y-cy)<158)continue;dot(ctx,x,y,r(.25,.7),r(.1,.45))}
+ })
+}
+
+/* ============================================================
+   07 WELL 引力井：被压弯的晶格 + 金色进动轨道 + 喷流 + 金尘
+   ============================================================ */
+function well(){
+ const T=.5,Dp=q=>210/(1+Math.pow(q/70,1.25)),Y0=-25,gold="#e5bf32",r=mk(707);
+ const P=(q,a)=>`${f1(q*Math.cos(a))} ${f1(q*Math.sin(a)*T+Dp(q)+Y0)}`;
+ let rings="",rad="";
+ for(let k=0;k<18;k++){const q=20*Math.pow(1.19,k);let d="";for(let i=0;i<=96;i++)d+=(i?"L":"M")+P(q,i/96*TAU);
+  rings+=`<path class="line" d="${d}Z" stroke="#eee" stroke-width="1" opacity="${clamp(.9-k*.036,.25,1).toFixed(2)}"/>`}
+ for(let j=0;j<32;j++){const a=j/32*TAU;let d="";for(let s=0;s<=40;s++)d+=(s?"L":"M")+P(370*Math.pow(10/370,s/40),a);
+  rad+=`<path class="line" d="${d}" stroke="#666" opacity=".5"/>`;
+  if(j%4===0)rad+=`<path class="line flow" d="${d}" stroke="${gold}" opacity=".9"/>`}
+ let ros="";for(let i=0;i<=540;i++){const t=i/540*6*Math.PI;ros+=(i?"L":"M")+P(205+65*Math.cos(2*t/3),t)}
+ let gauge="";for(let i=0;i<=34;i++){const y=-150+i*10,l=i%5===0?14:7;gauge+=`M-382 ${y}h${l}`}
+ setScene(`<defs><linearGradient id="jet" gradientUnits="userSpaceOnUse" x1="0" y1="166" x2="0" y2="-230"><stop stop-color="${gold}"/><stop offset="1" stop-color="${gold}" stop-opacity="0"/></linearGradient></defs>
+<g transform="translate(400 400)">
+${rad}${rings}
+<path class="line" d="${ros}" stroke="${gold}" stroke-width="1.6" opacity=".9" filter="url(#glow)"/>
+<circle r="4.5" fill="#fff" filter="url(#glow)"><animateMotion dur="30s" repeatCount="indefinite" path="${ros}"/></circle>
+<path class="line" d="M0 166L0 -230" stroke="url(#jet)" stroke-width="1.2"/>
+<path class="line" d="M0 166L0 -230" stroke="url(#jet)" stroke-width="6" opacity=".2" filter="url(#softGlow)"/>
+<ellipse cx="0" cy="172" rx="60" ry="22" class="line" stroke="${gold}" opacity=".25"/>
+<ellipse cx="0" cy="172" rx="34" ry="13" class="line" stroke="${gold}" opacity=".6"/>
+<ellipse cx="0" cy="172" rx="14" ry="5.5" fill="#000" stroke="#fff" stroke-width="1.6"/>
+<path class="line" d="${gauge}" stroke="#e9e8e2" opacity=".4"/><path class="line" d="M-382 -150V190" stroke="#e9e8e2" opacity=".3"/>
+</g>`,ctx=>{
+  ctx.globalCompositeOperation="lighter";
+  glow(ctx,400,572,190,GOLD,.28);glow(ctx,400,572,50,"255,255,255",.3);
+  for(let i=0;i<5200;i++){const x=400+gauss(r)*70,y=572+gauss(r)*30-Math.abs(gauss(r))*20;ctx.fillStyle=rgba(r.f()<.5?GOLD:BONE,r(.1,.6));const s=r(.3,1);ctx.fillRect(x,y,s,s)}
+  for(let i=0;i<260;i++){const x=400+gauss(r)*60,y=572-r(10,280)*r.f();ctx.strokeStyle=rgba(GOLD,r(.05,.25));ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+gauss(r)*3,y-r(6,26));ctx.stroke()}
+  for(let i=0;i<1600;i++){const x=r(0,800),y=r(0,800);ctx.fillStyle=rgba(BONE,r(.05,.3));ctx.fillRect(x,y,.8,.8)}
+ })
+}
+
+/* ============================================================
+   08 CONSTELLATION 星座：银河尘带 + 最小生成树连线 + 金色最长路径
+   ============================================================ */
+function stellar(){
+ const r=mk(8),vn=makeNoise(88),pts=[];
+ for(let t=0;t<5000&&pts.length<36;t++){const a=r.f()*TAU,d=Math.sqrt(r.f())*300,x=Math.cos(a)*d,y=Math.sin(a)*d;
+  if(pts.every(p=>Math.hypot(p[0]-x,p[1]-y)>56))pts.push([x,y,r(1.3,4.4)])}
+ const n=pts.length,dist=(i,j)=>Math.hypot(pts[i][0]-pts[j][0],pts[i][1]-pts[j][1]);
+ const inT=Array(n).fill(false),best=Array(n).fill(Infinity),par=Array(n).fill(-1),edges=[];best[0]=0;
+ for(let k=0;k<n;k++){let u=-1;for(let i=0;i<n;i++)if(!inT[i]&&(u<0||best[i]<best[u]))u=i;inT[u]=true;if(par[u]>=0)edges.push([par[u],u]);
+  for(let v=0;v<n;v++)if(!inT[v]&&dist(u,v)<best[v]){best[v]=dist(u,v);par[v]=u}}
+ const adj=Array.from({length:n},()=>[]);edges.forEach(([a,b])=>{adj[a].push(b);adj[b].push(a)});
+ const bfs=s=>{const prev=Array(n).fill(-2);prev[s]=-1;const q=[s];let last=s;
+  for(let i=0;i<q.length;i++){const u=q[i];last=u;for(const v of adj[u])if(prev[v]===-2){prev[v]=u;q.push(v)}}return{last,prev}};
+ const a0=bfs(0).last,{last:b0,prev}=bfs(a0),path=[];for(let u=b0;u!==-1;u=prev[u])path.push(u);
+ const key=(a,b)=>a<b?a+"-"+b:b+"-"+a,inMst=new Set(edges.map(e=>key(e[0],e[1]))),extra=[];
+ for(let i=0;i<n;i++){const near=[...Array(n).keys()].filter(j=>j!==i).sort((a,b)=>dist(i,a)-dist(i,b)).slice(0,2);
+  for(const j of near)if(dist(i,j)<100&&!inMst.has(key(i,j))&&r.f()<.45){inMst.add(key(i,j));extra.push([i,j])}}
+ const seg=e=>`M${f1(pts[e[0]][0])} ${f1(pts[e[0]][1])}L${f1(pts[e[1]][0])} ${f1(pts[e[1]][1])}`;
+ const gd=path.map((u,i)=>(i?"L":"M")+f1(pts[u][0])+" "+f1(pts[u][1])).join("");
+ let st="";
+ pts.forEach(([x,y,s])=>{
+  st+=`<circle class="tw" style="animation-delay:-${(r.f()*4).toFixed(1)}s" cx="${f1(x)}" cy="${f1(y)}" r="${f1(s)}" fill="#eee"/>`;
+  if(s>3.4)st+=`<circle class="line" cx="${f1(x)}" cy="${f1(y)}" r="${f1(s+7)}" stroke="#eee" opacity=".5"/><path class="line" d="M${f1(x-s-12)} ${f1(y)}H${f1(x+s+12)}M${f1(x)} ${f1(y-s-12)}V${f1(y+s+12)}" stroke="#eee" opacity=".55"/>`});
+ let decl="";for(const rr of[120,200,280])decl+=`<circle class="line" r="${rr}" stroke="#e9e8e2" opacity=".1" stroke-dasharray="1 6"/>`;
+ setScene(`<g transform="translate(400 400)">
+<g class="spin2" opacity=".55">${anchor(352)}<circle class="line" r="344" stroke="#555"/>${ticks(344,144,9,4,12,"#aaa",.6)}<ellipse class="line" rx="344" ry="118" stroke="#444" transform="rotate(24)"/><ellipse class="line" rx="344" ry="118" stroke="#444" transform="rotate(-36)"/></g>
+${decl}
+<path class="line" d="${edges.map(seg).join("")}" stroke="#aaa" stroke-width="1" opacity=".5"/>
+<path class="line" d="${extra.map(seg).join("")}" stroke="#777" stroke-dasharray="2 5"/>
+<path class="line" d="${gd}" stroke="#e5bf32" stroke-width="2.2" filter="url(#glow)"/>
+${path.map(u=>`<circle cx="${f1(pts[u][0])}" cy="${f1(pts[u][1])}" r="3.2" fill="#e5bf32"/>`).join("")}
+${st}
+</g>`,ctx=>{
+  ctx.globalCompositeOperation="lighter";
+  const ang=-.62,sa=Math.sin(ang),ca=Math.cos(ang);
+  for(let i=0;i<110000;i++){const x=r(0,800),y=r(0,800),u=((x-400)*sa-(y-400)*ca),band=Math.exp(-u*u/(2*110*110)),d=band*(.2+1.3*vn(x*.011,y*.011))*(.5+.8*vn(x*.05+4,y*.05));
+   if(r.f()<d*1.1){ctx.fillStyle=rgba(r.f()<.14?GOLD:BONE,r(.1,.55));const s=r(.35,1.2);ctx.fillRect(x,y,s,s)}}
+  for(let i=0;i<500;i++){ctx.fillStyle=rgba(BONE,r(.1,.6));const s=r(.4,1.3);ctx.fillRect(r(0,800),r(0,800),s,s)}
+  glow(ctx,400+Math.cos(ang)*-190,400+Math.sin(ang)*-190,150,GOLD,.06);
+  ctx.globalCompositeOperation="destination-in";const m=ctx.createRadialGradient(400,400,230,400,400,395);m.addColorStop(0,"#000");m.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=m;ctx.fillRect(0,0,800,800);
+ })
+}
+
+/* ---------- 模式表与切换 ---------- */
+const MODES=[
+ {id:"armillary",n:"01 ARMILLARY",cap:"ARMILLARY",sub:"RINGS / AXIS / CELESTIAL SCALE",theme:"dark",draw:armillary},
+ {id:"lens",n:"02 LENS",cap:"LENS",sub:"LIGHT BENT AROUND A SILENCE",theme:"dark",draw:lens},
+ {id:"eclipse",n:"03 ECLIPSE",cap:"ECLIPSE",sub:"CORONA / PAPER / INK",theme:"paper",dust:true,draw:eclipse},
+ {id:"portal",n:"04 PORTAL",cap:"PORTAL",sub:"DEPTH / THRESHOLD / LIGHT",theme:"dark",draw:portal},
+ {id:"meridian",n:"05 MERIDIAN",cap:"MERIDIAN",sub:"STAR TRAILS / RIDGE / MONOLITH",theme:"dark",draw:meridian},
+ {id:"phase",n:"06 PHASE",cap:"PHASE",sub:"STIPPLE / LIGHT / TERMINATOR",theme:"paper",draw:phase},
+ {id:"well",n:"07 WELL",cap:"WELL",sub:"CURVATURE / FALL / PRECESSION",theme:"dark",draw:well},
+ {id:"stellar",n:"08 CONSTELLATION",cap:"CONSTELLATION",sub:"DUST / TREE / LONGEST PATH",theme:"dark",draw:stellar},
+];
+ui.innerHTML=MODES.map(m=>`<button type="button" data-m="${m.id}" aria-pressed="false">${m.n}</button>`).join("");
+const btns=[...ui.querySelectorAll("button")];
+let want=0,token=0;
+function render(m){
+ cur=m;want=MODES.indexOf(m);
+ document.body.dataset.theme=m.theme;
+ $("#themeColor").content=m.theme==="paper"?"#e9e8e2":"#050506";
+ capEl.textContent=m.cap;subEl.textContent=m.sub;
+ btns.forEach(b=>{const on=b.dataset.m===m.id;b.classList.toggle("active",on);b.setAttribute("aria-pressed",on);
+  if(on)ui.scrollTo({left:b.offsetLeft-ui.clientWidth/2+b.clientWidth/2,behavior:RM?"auto":"smooth"})});
+ m.draw();
+ if(RM)backdrop(0);
+ try{history.replaceState(null,"","#"+m.id)}catch(e){}
+}
+function setMode(id){
+ const m=MODES.find(x=>x.id===id);if(!m||m===cur)return;
+ const t=++token;
+ if(RM||!cur){render(m);return}
+ art.classList.add("out");
+ setTimeout(()=>{if(t!==token)return;render(m);art.classList.remove("out")},260);
+}
+const go=i=>setMode(MODES[(i+MODES.length)%MODES.length].id);
+ui.addEventListener("click",e=>{const b=e.target.closest("button");if(b)setMode(b.dataset.m)});
+addEventListener("keydown",e=>{
+ if(e.key==="ArrowRight")go(want+1);else if(e.key==="ArrowLeft")go(want-1);
+ else if(/^[1-8]$/.test(e.key))go(+e.key-1)});
+let sx0=0,sy0=0;
+scene.addEventListener("touchstart",e=>{if(e.target.closest(".ui"))return;sx0=e.touches[0].clientX;sy0=e.touches[0].clientY},{passive:true});
+scene.addEventListener("touchend",e=>{if(e.target.closest(".ui"))return;const t=e.changedTouches[0],dx_=t.clientX-sx0,dy_=t.clientY-sy0;
+ if(Math.abs(dx_)>60&&Math.abs(dx_)>Math.abs(dy_)*1.5)go(want+(dx_<0?1:-1))},{passive:true});
+
+resize();
+render(MODES.find(m=>m.id===location.hash.slice(1))||MODES[0]);
+if(!RM)raf=requestAnimationFrame(frame);
+</script>
+</body>
+</html>

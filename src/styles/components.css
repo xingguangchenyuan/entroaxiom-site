@@ -109,10 +109,19 @@
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   font-size: var(--fs-brand);
   font-weight: var(--fw-semibold);
   color: var(--c-text);
   letter-spacing: 0.01em;
+}
+
+.brand-mark {
+  width: 27px;
+  height: 27px;
+  flex: none;
 }
 
 .brand:hover {
@@ -239,14 +248,20 @@
 }
 
 /* ==========================================================================
-   欢迎层（设计文档 §5、§6.1）
+   欢迎层 — 沿用原壁纸与文案，以黑色留白、克制的玻璃质感呈现
    ========================================================================== */
 .welcome-overlay {
+  --welcome-ink: #fff;
+  --welcome-muted: rgba(255, 255, 255, 0.7);
+  --welcome-glass: rgba(255, 255, 255, 0.1);
+  --welcome-line: rgba(255, 255, 255, 0.24);
   position: fixed;
   inset: 0;
   z-index: var(--z-welcome);
-  background: var(--c-backdrop);
+  background: #000;
   overflow: hidden;
+  isolation: isolate;
+  color: var(--welcome-ink);
   transition: opacity var(--dur-slow) var(--ease-out);
 }
 
@@ -255,50 +270,225 @@
   pointer-events: none;
 }
 
-.welcome-body {
+.welcome-art {
+  position: absolute;
+  inset: 20% 0 -19%;
+  pointer-events: none;
+  opacity: 0.9;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 19%, #000 82%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 19%, #000 82%, transparent);
+}
+
+.welcome-art .wallpaper-picture img {
+  object-position: center 45% !important;
+}
+
+.welcome-veil {
   position: absolute;
   inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 33% 32% at 50% 76%, rgba(140, 116, 234, 0.17), transparent 85%),
+    radial-gradient(ellipse 45% 30% at 50% 94%, rgba(100, 202, 184, 0.08), transparent 85%),
+    linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.98) 34%, rgba(0, 0, 0, 0.7) 53%, rgba(0, 0, 0, 0.05) 82%, #000 100%);
+}
+
+.welcome-orbit {
+  position: absolute;
+  left: 50%;
+  top: 79%;
+  width: min(90vw, 900px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(206, 196, 255, 0.12);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotateX(65deg) rotate(-18deg);
+  pointer-events: none;
+}
+
+.welcome-orbit-two {
+  width: min(70vw, 680px);
+  border-color: rgba(206, 196, 255, 0.09);
+  transform: translate(-50%, -50%) rotateX(65deg) rotate(25deg);
+}
+
+.welcome-layout {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: max(32px, env(safe-area-inset-top)) clamp(24px, 5vw, 64px)
+    max(32px, env(safe-area-inset-bottom));
+}
+
+.welcome-masthead {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 11px;
+  font-size: 16px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.welcome-mark {
+  width: 34px;
+  height: 34px;
+  flex: none;
+}
+
+.welcome-body {
+  align-self: start;
+  justify-self: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--sp-5);
   text-align: center;
-  padding: var(--sp-6);
+  width: 100%;
+  padding-top: clamp(36px, 7vh, 78px);
+}
+
+.welcome-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 13px;
+  border: 1px solid var(--welcome-line);
+  border-radius: var(--r-pill);
+  background: var(--welcome-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  letter-spacing: 0.18em;
+}
+
+.welcome-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--welcome-ink);
 }
 
 .welcome-title {
-  font-size: var(--fs-welcome-title);
-  font-weight: var(--fw-semibold);
-  letter-spacing: -0.02em;
-  color: var(--c-welcome-text);
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+  max-width: 100%;
+  margin-top: 20px;
+  overflow: hidden;
+  font-size: clamp(56px, 7vw, 104px);
+  font-weight: var(--fw-medium);
+  line-height: 1.08;
+  letter-spacing: -0.065em;
+  color: var(--welcome-ink);
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
+}
+
+.welcome-title span {
+  display: block;
+  padding: 0 0.12em 0.1em;
+  margin-bottom: -0.1em;
 }
 
 .welcome-sub {
-  font-size: var(--fs-welcome-sub);
-  color: var(--c-welcome-dim);
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+  margin-top: 14px;
+  font-size: clamp(15px, 1.6vw, 19px);
+  font-weight: var(--fw-normal);
+  line-height: 1.6;
+  letter-spacing: 0.08em;
+  color: var(--welcome-muted);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.8);
 }
 
 .welcome-enter {
-  margin-top: var(--sp-3);
-  padding: var(--sp-3) var(--sp-7);
-  font-size: var(--fs-welcome-btn);
-  font-weight: var(--fw-medium);
-  color: var(--c-welcome-text);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: var(--r-pill);
-  background: rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition: background var(--dur-fast) var(--ease-io),
-    box-shadow var(--dur-fast) var(--ease-io);
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+  min-width: 164px;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 1px solid var(--welcome-ink);
+  border-radius: var(--r-control);
+  background: var(--welcome-ink);
+  color: #000;
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: background-color var(--dur-fast) var(--ease-io),
+    transform var(--dur-fast) var(--ease-io);
 }
 
 .welcome-enter:hover {
-  background: rgba(0, 0, 0, 0.32);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  background: #e9e9ea;
+  transform: translateY(-2px);
+}
+
+.welcome-enter:focus-visible {
+  outline: 2px solid #9b8cff;
+  outline-offset: 4px;
+}
+
+.welcome-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+}
+
+.welcome-footer-line {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .welcome-masthead { animation: welcome-rise 0.6s var(--ease-out) both; }
+  .welcome-pill { animation: welcome-rise 0.65s var(--ease-out) 0.18s both; }
+  .welcome-title span { animation: welcome-reveal 0.9s cubic-bezier(0.18, 0.85, 0.26, 1) 0.3s both; }
+  .welcome-sub { animation: welcome-rise 0.7s var(--ease-out) 0.55s both; }
+  .welcome-enter { animation: welcome-rise 0.65s var(--ease-out) 0.75s both; }
+  .welcome-footer { animation: welcome-rise 0.65s var(--ease-out) 0.9s both; }
+}
+
+@keyframes welcome-rise {
+  from { opacity: 0; translate: 0 12px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes welcome-reveal {
+  from { transform: translateY(115%); }
+  to { transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+  .welcome-layout {
+    padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  }
+  .welcome-art { inset: 28% -35% -6%; opacity: 0.78; }
+  .welcome-body { padding-top: clamp(30px, 7vh, 72px); }
+  .welcome-title { font-size: clamp(46px, 12vw, 72px); }
+  .welcome-sub { max-width: 24em; letter-spacing: 0.04em; }
+  .welcome-footer { font-size: 9px; letter-spacing: 0.1em; }
+}
+
+@media (max-height: 560px) {
+  .welcome-layout { padding-top: 16px; padding-bottom: 16px; }
+  .welcome-body { padding-top: 8px; }
+  .welcome-title { margin-top: 8px; font-size: clamp(42px, 9vh, 64px); }
+  .welcome-sub { margin-top: 4px; }
+  .welcome-enter { margin-top: 10px; }
+  .welcome-footer { display: none; }
 }
 
 /* ==========================================================================

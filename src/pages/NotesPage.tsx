@@ -6,7 +6,7 @@ import { ModuleList } from '../components/list/ModuleList';
 export function NotesPage() {
   useDocumentTitle(moduleTitles.notes);
   return (
-    <ContentPanel>
+    <ContentPanel world="venus">
       <ModuleList kind="notes" />
     </ContentPanel>
   );

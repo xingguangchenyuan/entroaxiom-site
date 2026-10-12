@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { SITE_NAME, copy, navItems } from '../../config/site';
+import { AxiomMark } from './AxiomMark';
 
 interface Props {
   onNavigate: () => void;
@@ -22,6 +23,7 @@ export function TopNav({ onNavigate, menuOpen, onToggleMenu }: Props) {
     <header className="topnav">
       <div className="topnav-inner">
         <NavLink to="/" className="brand" onClick={onNavigate}>
+          <AxiomMark className="brand-mark" />
           {SITE_NAME}
         </NavLink>
 
