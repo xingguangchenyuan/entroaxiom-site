@@ -16,9 +16,9 @@ export const navItems: NavItem[] = [
 ];
 
 export const welcomeCopy = {
-  title: 'Hello World',
-  sub: '在无序的熵变中，确立世界的公理',
-  enter: '进入网站 →',
+  title: '欢迎来到我的宇宙',
+  sub: '在无序的熵变中，收藏灵感，记录思考，寻找属于自己的公理。',
+  enter: '进入我的星图 ↗',
 };
 
 export const moduleTitles = {

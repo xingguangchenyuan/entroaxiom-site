@@ -1,67 +1,76 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { ContentPanel } from '../components/layout/ContentPanel';
-import { GalaxyBackdrop } from '../components/layout/GalaxyBackdrop';
-import { worlds, worldOrder, type WorldKey } from '../config/worlds';
+import { CosmicScene, type CosmicSceneName } from '../components/art/CosmicScene';
+import { worlds, worldOrder } from '../config/worlds';
 
-/** 三个知识模块化为三枚可切换的抽象星象印记。 */
+/** 一座私人星图：从自我介绍出发，通往收藏、笔记与文章。 */
 export function HomePage() {
   useDocumentTitle();
-  const [featured, setFeatured] = useState<WorldKey>('earth');
-  const world = worlds[featured];
-  const others = worldOrder.filter((key) => key !== featured);
 
   return (
     <ContentPanel variant="home">
-      <section className="galaxy-home" aria-label="探索知识星系">
-        <GalaxyBackdrop featured={featured} />
-        <div className="galaxy-feature-art" key={featured} aria-hidden="true">
-          <div className="galaxy-feature-orbit" />
-          <img src={world.symbol} alt="" />
-        </div>
-        <div className="galaxy-observatory" aria-hidden="true">
-          <div className="galaxy-observatory-ring galaxy-observatory-ring-outer" />
-          <div className="galaxy-observatory-ring galaxy-observatory-ring-inner" />
-          <div className="galaxy-observatory-crosshair" />
-        </div>
-        <div className="galaxy-hero" key={featured}>
-          <span className="galaxy-eyebrow">ENTROAXIOM / {world.tag}</span>
-          <div className="galaxy-coordinate" aria-hidden="true">INDEX / {String(worldOrder.indexOf(featured) + 1).padStart(2, '0')} <span>✦</span> KNOWLEDGE ATLAS</div>
-          <h1 className="galaxy-headline">{world.name}</h1>
-          <span className="galaxy-rule" aria-hidden="true" />
-          <h2 className="galaxy-module-name">{world.module}</h2>
-          <p className="galaxy-description">{world.description}</p>
-          <Link className="galaxy-explore" to={world.path}>探索{world.module}<span aria-hidden="true"> ↗</span></Link>
-        </div>
-        <div className="galaxy-satellites" aria-label="切换知识星象">
-          {others.map((key) => (
-            <button
-              key={key}
-              className={`galaxy-satellite galaxy-satellite-${key}`}
-              type="button"
-              onClick={() => setFeatured(key)}
-              aria-label={`切换至${worlds[key].module}，${worlds[key].name}`}
-            >
-              <img src={worlds[key].symbol} alt="" loading="lazy" />
-              <span className="galaxy-satellite-label">{worlds[key].name}<small>{worlds[key].module}</small></span>
-            </button>
-          ))}
-        </div>
-        <div className="galaxy-instrument" aria-hidden="true">
-          <span className="galaxy-instrument-caption">SIGNAL / KNOWLEDGE ATLAS</span>
-          <div className="galaxy-instrument-scale">
-            <div className="galaxy-instrument-track">
-              {Array.from({ length: 2 }, (_, set) => (
-                <span className="galaxy-instrument-set" key={set}>
-                  {Array.from({ length: 61 }, (_, tick) => <i key={tick} className={tick % 5 === 0 ? 'major' : ''} />)}
-                </span>
-              ))}
+      <div className="personal-home">
+        <section className="personal-hero" aria-labelledby="home-title">
+          <div className="personal-hero-grid" aria-hidden="true" />
+          <div className="personal-hero-copy">
+            <p className="personal-overline">ENTROAXIOM <span aria-hidden="true">✦</span> 一个人的宇宙</p>
+            <h1 id="home-title">在无序中，<br />寻找属于自己的<span>星图。</span></h1>
+            <p className="personal-intro">你好，欢迎来到我的个人网站。这里收藏我遇见的知识，也记录我在学习、阅读与思考中留下的轨迹。</p>
+            <div className="personal-actions">
+              <a className="personal-primary" href="#explore">开始探索 <span aria-hidden="true">↗</span></a>
+              <span className="personal-action-note">向未知，建立坐标</span>
             </div>
           </div>
-          <span className="galaxy-instrument-readout">{String(worldOrder.indexOf(featured) + 1).padStart(2, '0')} / 03</span>
-        </div>
-      </section>
+          <div className="personal-hero-visual" aria-hidden="true">
+            <CosmicScene scene="armillary" />
+          </div>
+          <div className="personal-hero-bottom" aria-hidden="true">
+            <span>PRIVATE UNIVERSE / EST. IN CURIOSITY</span>
+            <span>向下探索 <span className="personal-down">↓</span></span>
+          </div>
+        </section>
+
+        <section className="personal-manifesto" aria-labelledby="manifesto-title">
+          <div className="personal-manifesto-art" aria-hidden="true"><CosmicScene scene="edgeon" /></div>
+          <div className="personal-manifesto-copy">
+            <p className="personal-overline">关于这个空间</p>
+            <h2 id="manifesto-title">以好奇为引力，<br />让思想有迹可循。</h2>
+            <p>我相信，思考不必总有终点。散落的资料、尚未完成的笔记、读完一篇文章后的感触，都值得被认真保存。</p>
+            <p>于是有了这座小小的私人观测站。它不试图解释整个宇宙，只诚实地记录我看见的那一部分。</p>
+            <span className="personal-signature">entroaxiom <span aria-hidden="true">✧</span></span>
+          </div>
+        </section>
+
+        <section className="personal-explore" id="explore" aria-labelledby="explore-title">
+          <div className="personal-section-heading">
+            <div>
+              <p className="personal-overline">我的星图 / 三条航线</p>
+              <h2 id="explore-title">从这里，继续航行。</h2>
+            </div>
+            <p>每一次收藏、记录与总结，<br />都是为未知点亮一颗星。</p>
+          </div>
+          <div className="personal-paths">
+            {worldOrder.map((key, index) => {
+              const world = worlds[key];
+              const scenes: CosmicSceneName[] = ['horizon', 'corona', 'lens'];
+              return (
+                <Link className="personal-path" to={world.path} key={key}>
+                  <span className="personal-path-index">0{index + 1} / 03</span>
+                  <span className="personal-path-image"><CosmicScene scene={scenes[index]} /></span>
+                  <span className="personal-path-content">
+                    <span className="personal-path-english">{world.name}</span>
+                    <strong>{world.module}</strong>
+                    <span className="personal-path-description">{world.description}</span>
+                  </span>
+                  <span className="personal-path-arrow" aria-hidden="true">↗</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+        <footer className="personal-footer"><span>✦ ENTROAXIOM</span><span>在无序的熵变中，确立自己的公理。</span><a href="#main">回到星图之上 ↑</a></footer>
+      </div>
     </ContentPanel>
   );
 }

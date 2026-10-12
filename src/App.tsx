@@ -6,10 +6,8 @@ import { useSessionEntered } from './hooks/useSessionEntered';
 import { SkipLink } from './components/layout/SkipLink';
 import { TopNav } from './components/layout/TopNav';
 import { MobileMenu } from './components/layout/MobileMenu';
-import { WallpaperLayer } from './components/layout/WallpaperLayer';
 import { WelcomeOverlay } from './components/welcome/WelcomeOverlay';
 import { ErrorBoundary } from './components/state/ErrorBoundary';
-import { wallpapers } from './config/wallpapers';
 import { useLocation } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { FilesPage } from './pages/FilesPage';
@@ -68,7 +66,6 @@ export default function App() {
         ref={stageRef}
         aria-hidden={welcomeActive || undefined}
       >
-        {!galaxyPage && <WallpaperLayer config={wallpapers.site} />}
         <TopNav
           onNavigate={onNavigate}
           menuOpen={menuOpen}

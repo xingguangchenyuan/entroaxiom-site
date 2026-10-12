@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { GalaxyBackdrop } from './GalaxyBackdrop';
+import { CosmicScene, type CosmicSceneName } from '../art/CosmicScene';
 import { worlds, type WorldKey } from '../../config/worlds';
 
 interface Props {
@@ -30,8 +31,7 @@ export function ContentPanel({ children, variant = 'panel', world }: Props) {
       <main id="main" tabIndex={-1} className={`content world-page world-page-${world}`}>
         <GalaxyBackdrop featured={world} />
         <div className="world-page-art" aria-hidden="true">
-          <div className="world-page-art-ring" />
-          <img src={worlds[world].symbol} alt="" />
+          <CosmicScene scene={({ earth: 'horizon', venus: 'corona', mars: 'lens' } satisfies Record<WorldKey, CosmicSceneName>)[world]} />
         </div>
         <div className="world-page-content">
           <span className="world-page-kicker">ENTROAXIOM / {worlds[world].tag}</span>
