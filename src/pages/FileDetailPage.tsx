@@ -1,123 +1,119 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getFile } from '../content/loader';
 import type { FileItem } from '../content/types';
 import { copy } from '../config/site';
+import { useAsync } from '../hooks/useAsync';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { ContentPanel } from '../components/layout/ContentPanel';
-import { DemoBadge } from '../components/list/DemoBadge';
 import { formatBytes, kindLabel } from '../lib/format';
+import { FileGlyph } from '../components/list/FileRow';
+import { Lightbox } from '../components/reading/Lightbox';
+import { DemoBadge } from '../components/list/DemoBadge';
+import { ErrorState } from '../components/state/ErrorState';
+import { NotFoundState } from '../components/state/NotFoundState';
+import { Knob } from '../components/ui/Knob';
+import { IconBack, IconDownload } from '../components/ui/Icons';
 
-interface Props {
-  file: FileItem;
-}
-
-/** 可预览文件的展示区（设计文档 §8 文件详情） */
-function FilePreview({ file }: Props) {
+/** 可预览文件的展示区：图片（点击放大）、PDF（内嵌，不可用时回退） */
+function FilePreview({ file }: { file: FileItem }) {
+  const [zoom, setZoom] = useState(false);
+  const [broken, setBroken] = useState(false);
   if (!file.src) return null;
 
   if (file.kind === 'image') {
-    return (
-      <figure className="file-preview">
-        <img
-          className="file-preview-image"
-          src={file.src}
-          alt={file.name}
-          loading="lazy"
-          onError={(e) => {
-            (e.currentTarget.parentElement as HTMLElement).dataset.broken = 'true';
-          }}
-        />
-      </figure>
+    return broken ? (
+      <p className="file-note">{copy.imageFailed}</p>
+    ) : (
+      <>
+        <button type="button" className="file-preview file-preview--image" aria-label={copy.zoomAlt} onClick={() => setZoom(true)}>
+          <img src={file.src} alt={file.name} onError={() => setBroken(true)} />
+        </button>
+        {zoom && <Lightbox src={file.src} alt={file.name} onClose={() => setZoom(false)} />}
+      </>
     );
   }
-
   if (file.kind === 'pdf') {
     return (
-      <div className="file-preview">
-        <object className="file-preview-pdf" data={file.src} type="application/pdf">
-          <p className="file-preview-fallback">{copy.pdfUnsupported}</p>
+      <div className="file-preview file-preview--pdf">
+        <object data={file.src} type="application/pdf" aria-label={file.name}>
+          <p className="file-note">{copy.pdfUnsupported}</p>
         </object>
       </div>
     );
   }
-
-  return null;
+  return <p className="file-note">{copy.previewUnsupported}</p>;
 }
 
 export function FileDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [file, setFile] = useState<FileItem | null>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    setReady(false);
-    if (!id) {
-      setReady(true);
-      return;
-    }
-    getFile(id).then((f) => {
-      if (!alive) return;
-      setFile(f ?? null);
-      setReady(true);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [id]);
-
+  const state = useAsync<FileItem | undefined>(() => (id ? getFile(id) : Promise.resolve(undefined)), [id]);
+  const file = state.status === 'ready' ? state.data : undefined;
   useDocumentTitle(file?.name);
 
-  if (!ready || file === null) {
+  if (state.status === 'error') {
     return (
-      <ContentPanel>
-        {ready && (
-          <div className="state-empty">
-            <p className="state-text">{copy.contentMissing}</p>
-            <Link className="state-action" to="/files">
-              {copy.backToList}
-            </Link>
-          </div>
-        )}
-      </ContentPanel>
+      <main id="main" className="page page--read" tabIndex={-1}>
+        <ErrorState onRetry={state.retry} />
+      </main>
+    );
+  }
+  if (state.status === 'loading') {
+    return (
+      <main id="main" className="page page--read" tabIndex={-1} aria-busy="true">
+        <div className="skeleton skeleton--title" />
+        <div className="skeleton skeleton--body" />
+      </main>
+    );
+  }
+  if (!file) {
+    return (
+      <main id="main" className="page page--read" tabIndex={-1}>
+        <NotFoundState title={copy.contentMissing} desc={copy.contentMissingDesc} />
+      </main>
     );
   }
 
-  const meta = [
-    formatBytes(file.size),
-    file.kind ? kindLabel(file.kind) : null,
-    file.ext ? `${file.ext.toUpperCase()}` : null,
-    file.updatedAt ? `更新于 ${file.updatedAt}` : null,
-  ].filter(Boolean);
+  const rows: [string, string][] = [
+    ['类型', `${kindLabel(file.kind)} · ${file.ext.toUpperCase()}`],
+    ['大小', formatBytes(file.size)],
+    ...(file.updatedAt ? ([['更新于', file.updatedAt]] as [string, string][]) : []),
+  ];
 
   return (
-    <ContentPanel>
-      <div className="file-detail">
-        <header className="file-detail-header">
-          <Link className="reading-back-link" to="/files">
-            ← {copy.backToList}
-          </Link>
+    <main id="main" className="page page--read" tabIndex={-1}>
+      <Link to="/files" className="text-action article__back">
+        <IconBack size={15} /> {copy.backToList}
+      </Link>
+      <header className="file-head">
+        <FileGlyph kind={file.kind} ext={file.ext} />
+        <div>
+          <h1 className="file-head__name">{file.name}</h1>
+          {file.description && <p className="file-head__desc">{file.description}</p>}
           <DemoBadge />
-          <h1 className="file-detail-name">{file.name}</h1>
-          {meta.length > 0 && <p className="file-detail-meta">{meta.join(' · ')}</p>}
-          {file.description && <p className="file-detail-desc">{file.description}</p>}
-        </header>
-
-        <div className="file-detail-body">
-          <FilePreview file={file} />
-          {(file.src && (file.kind === 'image' || file.kind === 'pdf')) === false && (
-            <p className="file-detail-note">{copy.previewUnsupported}</p>
-          )}
-          {file.src && (
-            <div className="file-detail-actions">
-              <a className="btn-download" href={file.src} download={file.name}>
-                {copy.download}
-              </a>
-            </div>
-          )}
         </div>
+      </header>
+
+      <div className="file-grid">
+        <section className="file-stage glass glass--flat" aria-label="预览">
+          <FilePreview file={file} />
+        </section>
+        <aside className="file-side glass glass--flat">
+          <dl className="file-facts">
+            {rows.map(([k, v]) => (
+              <div key={k}>
+                <dt>{k}</dt>
+                <dd>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          {file.src && (
+            <a className="knob knob--block" href={file.src} download={file.name}>
+              <span className="knob__cap"><IconDownload size={17} /> {copy.download}</span>
+            </a>
+          )}
+          <Knob to="/files" tone="dark" size="sm" block>返回文件库</Knob>
+        </aside>
       </div>
-    </ContentPanel>
+    </main>
   );
 }

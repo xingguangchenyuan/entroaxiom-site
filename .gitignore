@@ -11,8 +11,6 @@ npm-debug.log*
 .env.*
 !.env.example
 
-# 壁纸与演示产物提交进仓库，不忽略：
-# public/media/、public/demo-assets/
 
 # 工具与系统
 .DS_Store

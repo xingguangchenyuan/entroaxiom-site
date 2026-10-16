@@ -1,55 +1,81 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { welcomeCopy } from '../../config/site';
-import { CosmicScene } from '../art/CosmicScene';
-import { AxiomMark } from '../layout/AxiomMark';
+import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { pulseSky, setSkyMode, useSkyMode } from '../sky/skyStore';
+import { Knob } from '../ui/Knob';
 
 interface Props {
-  /** 是否正在淡出（等待 onClosed 卸载） */
-  closing: boolean;
-  /** 点击「进入网站」 */
   onEnter: () => void;
-  /** 淡出动画结束（由父组件决定 reduced-motion 时是否立即触发） */
-  onClosed: () => void;
 }
 
+/** 离场动画时长：与 welcome.css 中 .welcome.is-leaving 的时长保持一致 */
+const LEAVE_MS = 1400;
+
 /**
- * 欢迎层：实时绘制的引力透镜作为入口视觉，淡出后由首页接管焦点。
+ * 欢迎页：黑洞居中，标题一字一字浮现。
+ * 进入时的“仪式”：金光一闪 → 黑洞滑向首页的位置（由天空层完成）→ 文字沉入虚空 → 首页浮现。
  */
-export function WelcomeOverlay({ closing, onEnter, onClosed }: Props) {
-  const handleTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClosed();
-  };
+export function WelcomeOverlay({ onEnter }: Props) {
+  useSkyMode('welcome');
+  const reduced = usePrefersReducedMotion();
+  const [leaving, setLeaving] = useState(false);
+  const leavingRef = useRef(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+
+  const begin = useCallback(() => {
+    if (leavingRef.current) return;
+    leavingRef.current = true;
+    setLeaving(true);
+    pulseSky();
+    setSkyMode('home');
+    window.setTimeout(onEnter, reduced ? 0 : LEAVE_MS);
+  }, [onEnter, reduced]);
+
+  // 在页面任意位置按 Enter 即可进入（焦点在按钮上时由按钮自己处理，避免重复触发）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'BUTTON' || t.tagName === 'A')) return;
+      begin();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [begin]);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => btnRef.current?.focus({ preventScroll: true }), reduced ? 0 : 1600);
+    return () => window.clearTimeout(id);
+  }, [reduced]);
+
+  const chars = Array.from(welcomeCopy.title);
 
   return (
-    <div
-      className={`welcome-overlay${closing ? ' welcome-overlay-closing' : ''}`}
-      onTransitionEnd={handleTransitionEnd}
-    >
-      <div className="welcome-art" aria-hidden="true">
-        <CosmicScene scene="lens" />
+    <div className={`welcome${leaving ? ' is-leaving' : ''}`} role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+      <div className="welcome__vertical display" aria-hidden="true">
+        {welcomeCopy.lines.map((l) => (
+          <span key={l}>{l}</span>
+        ))}
       </div>
-      <div className="welcome-veil" aria-hidden="true" />
-      <div className="welcome-orbit welcome-orbit-one" aria-hidden="true" />
-      <div className="welcome-orbit welcome-orbit-two" aria-hidden="true" />
-      <div className="welcome-layout">
-        <div className="welcome-masthead" aria-hidden="true">
-          <AxiomMark className="welcome-mark" />
-          <span className="welcome-name">entroaxiom</span>
+
+      <div className="welcome__top">
+        <h1 id="welcome-title" className="welcome__title display" aria-label={welcomeCopy.title}>
+          {chars.map((c, i) => (
+            <span key={i} className="welcome__char" aria-hidden="true" style={{ ['--d' as string]: `${0.25 + i * 0.09}s` }}>
+              {c}
+            </span>
+          ))}
+        </h1>
+        <p className="welcome__sub">{welcomeCopy.sub}</p>
+      </div>
+
+      <div className="welcome__bottom">
+        <div className="welcome__enter" ref={(el: HTMLDivElement | null) => { btnRef.current = el?.querySelector('button') ?? null; }}>
+          <Knob size="lg" onClick={begin} busy={leaving} aria-label={welcomeCopy.enter}>
+            {welcomeCopy.enter}
+          </Knob>
         </div>
-        <div className="welcome-body">
-          <span className="welcome-pill" aria-hidden="true">
-            <span className="welcome-pill-dot" /> 一个人的宇宙 · 一座思想的观测站
-          </span>
-          <h1 className="welcome-title"><span>{welcomeCopy.title}</span></h1>
-          <p className="welcome-sub">{welcomeCopy.sub}</p>
-          <button type="button" className="welcome-enter" onClick={onEnter}>
-            <span>{welcomeCopy.enter}</span>
-          </button>
-        </div>
-        <div className="welcome-footer" aria-hidden="true">
-          <span>PERSONAL SPACE / ENTROAXIOM</span>
-          <span className="welcome-footer-line" />
-          <span>向未知，建立坐标</span>
-        </div>
+        <p className="welcome__hint">{welcomeCopy.hint}</p>
       </div>
     </div>
   );

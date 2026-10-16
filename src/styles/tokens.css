@@ -1,126 +1,68 @@
-/* ==========================================================================
-   entroaxiom 设计令牌（设计文档 §3）
-   组件只引用变量，禁止硬编码颜色、圆角、阴影与动画时长。
-   ========================================================================== */
-
+/* 设计令牌：一处定义，全站引用 */
 :root {
-  color-scheme: light; /* 固定浅色，不跟随系统深色，不从壁纸取色 */
+  /* 虚空：由深到浅 */
+  --void: #04050a;
+  --abyss: #080a12;
+  --slab: #0e111c;
+  --slab-2: #141828;
 
-  /* ---- 表面 ---- */
-  --c-surface: #fbf9f6; /* 内容面板底色：暖白 */
-  --c-surface-sunken: #f4f1ec; /* 次级底色：输入框、斑马行 */
-  --c-surface-nav: rgba(252, 250, 247, 0.72); /* 导航保护层 */
-  --c-backdrop: #edebe7; /* 壁纸加载中/失败时的中性底色 */
+  /* 纸色（正文）：不是纯白，带一点旧纸的暖 */
+  --bone: #ece6d8;
+  --bone-2: #cfc9bb;
+  --dust: #a19e96;   /* 对比度在 #04050a 上 ≥ 7:1 */
+  --ash: #6f6d68;    /* 仅用于装饰性文字，不承载信息 */
 
-  /* ---- 文字 ---- */
-  --c-text: #2b2f36; /* 正文/导航，对 surface ≈ 12:1 */
-  --c-text-muted: #5b6270; /* 摘要、元信息，≈ 6.3:1 */
-  --c-text-faint: #767e8c; /* 最浅可用灰 ≥4.5:1，仅用于 ≥14px */
-  --c-text-on-surface-sunken: #3a3f47;
+  /* 公理金：吸积盘的颜色，只在“被点亮的东西”上使用 */
+  --axiom: #e8c36a;
+  --axiom-hi: #f7e1a0;
+  --axiom-lo: #b98a2e;
+  --axiom-ink: #1b1306;
 
-  /* ---- 强调（克制的蓝） ---- */
-  --c-accent: #2f6fb3; /* 选中项文字/链接，对 surface ≈ 5.0:1 */
-  --c-accent-strong: #255c96; /* hover / active */
-  --c-accent-soft: #e8f0f9; /* 选中态浅底 */
+  /* 冷光：星光与次要状态 */
+  --frost: #8db6ff;
+  --ember: #e07b4a;
+  --moss: #7fc8a0;
+  --rose: #e87a8c;
 
-  /* ---- 线与焦点 ---- */
-  --c-border: rgba(43, 47, 54, 0.1);
-  --c-border-strong: rgba(43, 47, 54, 0.18);
-  --c-focus: #1f5fa8;
+  /* 线与面 */
+  --line: rgba(236, 230, 216, 0.12);
+  --line-2: rgba(236, 230, 216, 0.22);
+  --glass-fill: linear-gradient(145deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.022) 55%, rgba(255, 255, 255, 0.05));
+  --glass-border: rgba(255, 255, 255, 0.13);
 
-  /* ---- 演示模式标注（琥珀色，非红色） ---- */
-  --c-demo-text: #8a5a00;
-  --c-demo-bg: #fdf3e0;
+  /* 字体：展示字体按需子集化；正文走系统无衬线，保证小字号清晰 */
+  --font-display: 'Entro Serif', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
-  /* ---- 欢迎页文字（浅色文字 + 局部柔边遮罩） ---- */
-  --c-welcome-text: #ffffff;
-  --c-welcome-dim: rgba(255, 255, 255, 0.88);
+  /* 字阶 */
+  --t-xs: 0.78rem;
+  --t-sm: 0.875rem;
+  --t-md: 1rem;
+  --t-lg: 1.18rem;
+  --t-xl: clamp(1.4rem, 1.2rem + 0.8vw, 1.85rem);
+  --t-2xl: clamp(1.9rem, 1.4rem + 2vw, 3rem);
+  --t-hero: clamp(2.5rem, 1.4rem + 4.6vw, 5.2rem);
 
-  /* ---- 间距 ---- */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 20px;
-  --sp-6: 24px;
-  --sp-7: 32px;
-  --sp-8: 40px;
-  --sp-9: 48px;
-  --sp-10: 64px;
+  /* 圆角：按层级区分，而不是全站同一个 */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 26px;
+  --r-pill: 999px;
 
-  /* ---- 圆角 ---- */
-  --r-panel: 16px; /* 内容面板 */
-  --r-control: 10px; /* 输入框、按钮 */
-  --r-pill: 999px; /* 分类筛选芯片 */
+  /* 动效 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-1: 160ms;
+  --dur-2: 320ms;
+  --dur-3: 640ms;
 
-  /* ---- 阴影（一律柔和） ---- */
-  --shadow-sm: 0 1px 2px rgba(31, 35, 42, 0.04), 0 2px 8px rgba(31, 35, 42, 0.04);
-  --shadow-md: 0 2px 6px rgba(31, 35, 42, 0.05), 0 8px 24px rgba(31, 35, 42, 0.06);
-  --shadow-lg: 0 8px 32px rgba(31, 35, 42, 0.1);
+  /* 布局 */
+  --nav-h: 76px;
+  --gutter: clamp(18px, 4vw, 56px);
+  --maxw: 1180px;
+  --readw: 720px;
 
-  /* ---- 布局尺寸 ---- */
-  --nav-h: 56px; /* 导航条高度 */
-  --nav-top: 24px; /* 导航距顶（移动端 12px） */
-  --nav-top-mobile: 12px;
-  --container-max: 1120px; /* 内容面板最大宽 */
-  --reading-max: 780px; /* 正文行宽 */
-
-  /* ---- 字体 ---- */
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC',
-    sans-serif;
-
-  /* ---- 字号（设计文档 §3.3 表格） ---- */
-  --fs-welcome-title: 64px; /* 移动端 40px，见媒体查询 */
-  --fs-welcome-sub: 20px; /* 移动端 16px */
-  --fs-welcome-btn: 16px;
-  --fs-brand: 17px; /* 站点标识 entroaxiom（移动端 16px） */
-  --fs-nav: 15.5px; /* 导航项（展开菜单内 16px） */
-  --fs-module-title: 26px; /* 页面 h1（移动端 22px） */
-  --fs-list-title: 17px; /* 列表条目标题（移动端 16px） */
-  --fs-list-meta: 14.5px; /* 列表摘要/元信息（移动端 14px） */
-  --fs-body: 17px; /* 正文（移动端 16px） */
-  --fs-h2: 23px; /* 正文 h2（移动端 20px） */
-  --fs-h3: 19px; /* 正文 h3（移动端 17px） */
-  --fs-code: 15px; /* 表格、代码（移动端 14px） */
-
-  /* ---- 字重 ---- */
-  --fw-normal: 400;
-  --fw-medium: 500;
-  --fw-semibold: 600;
-
-  /* ---- 行高 ---- */
-  --lh-body: 1.8;
-
-  /* ---- 动画 ---- */
-  --dur-fast: 150ms; /* hover、下划线 */
-  --dur-base: 220ms; /* 内容区淡入、菜单 */
-  --dur-slow: 400ms; /* 壁纸淡入 */
-  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --ease-io: cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* ---- z-index 分层（不得出现其他数值） ---- */
-  --z-wallpaper: 0;
-  --z-content: 10;
-  --z-nav: 100;
-  --z-mobile-menu: 110;
-  --z-welcome: 200;
-  --z-lightbox: 300;
-}
-
-@media (max-width: 767px) {
-  :root {
-    --nav-top: var(--nav-top-mobile);
-    --fs-welcome-title: 40px;
-    --fs-welcome-sub: 16px;
-    --fs-brand: 16px;
-    --fs-nav: 16px;
-    --fs-module-title: 22px;
-    --fs-list-title: 16px;
-    --fs-list-meta: 14px;
-    --fs-body: 16px;
-    --fs-h2: 20px;
-    --fs-h3: 17px;
-    --fs-code: 14px;
-  }
+  --focus: 0 0 0 2px var(--void), 0 0 0 4px var(--axiom);
 }

@@ -1,55 +1,53 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { FileItem } from '../../content/types';
 import { formatBytes, formatDate, kindLabel } from '../../lib/format';
+import { IconArrow } from '../ui/Icons';
 
-interface Props {
-  file: FileItem;
-}
-
-function FileGlyph({ kind }: { kind: FileItem['kind'] }) {
-  const common = {
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 1.6,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-  };
+export function FileGlyph({ kind, ext }: { kind: FileItem['kind']; ext: string }) {
   return (
-    <svg className="file-glyph" viewBox="0 0 24 24" aria-hidden="true" {...common}>
-      <path d="M6 3h8l4 4v14H6z" />
-      {kind === 'image' && <circle cx="12" cy="12.5" r="2.2" />}
-      {kind === 'pdf' && <path d="M10 11h4v6h-4zM9.5 11v6M14.5 11v6M8.5 13.5h3" />}
-      {kind === 'archive' && (
-        <>
-          <path d="M9 9 7.5 3h9L15 9" />
-          <rect x="8" y="9" width="8" height="12" rx="1" />
-        </>
-      )}
-      {kind === 'doc' && <path d="M9 13h6M9 16h4" />}
-      {kind === 'other' && <path d="M8 15h3" />}
-    </svg>
+    <span className={`fglyph fglyph--${kind}`} aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 3h8l4 4v14H6z" />
+        <path d="M14 3v4h4" />
+        {kind === 'image' && <><circle cx="10.5" cy="12" r="1.3" /><path d="m7.5 18 3.5-3.5 2.5 2.5 2-2 1.5 1.5" /></>}
+        {kind === 'pdf' && <path d="M9 12h6M9 15h6M9 18h3" />}
+        {kind === 'archive' && <path d="M12 9v2m0 2v2m0 2v1" />}
+        {kind === 'doc' && <path d="M9 12h6M9 15h6M9 18h4" />}
+        {kind === 'other' && <path d="M9 14h6" />}
+      </svg>
+      <span className="fglyph__ext">{ext.slice(0, 4)}</span>
+    </span>
   );
 }
 
-/**
- * 文件库行条目（设计文档 §8）
- * - 整行 hover 轻微提亮，点击打开详情/预览；不假装已下载；
- * - 超长文件名换行不撑破布局（word-break）。
- */
-export function FileRow({ file }: Props) {
+/** 文件库行：图片显示缩略图（加载失败回退图标）；超长文件名换行不撑破布局 */
+export function FileRow({ file }: { file: FileItem }) {
+  const [thumbFailed, setThumbFailed] = useState(false);
   const dateText = formatDate(file.updatedAt);
+  const thumb = file.kind === 'image' && file.src && !thumbFailed;
   return (
     <li>
-      <a className="file-row" href={`/files/${file.id}`}>
-        <FileGlyph kind={file.kind} />
-        <span className="file-row-main">
-          <span className="file-row-name">{file.name}</span>
-          <span className="file-row-meta">
-            <span className="file-row-kind">{kindLabel(file.kind)}</span>
-            {dateText && <time className="file-row-date">{dateText}</time>}
+      <Link className="item item--file lit" to={`/files/${file.id}`}>
+        {thumb ? (
+          <span className="fthumb" aria-hidden="true">
+            <img src={file.src} alt="" loading="lazy" decoding="async" onError={() => setThumbFailed(true)} />
+          </span>
+        ) : (
+          <FileGlyph kind={file.kind} ext={file.ext} />
+        )}
+        <span className="item__main">
+          <span className="item__title item__title--file">{file.name}</span>
+          <span className="item__tags">
+            <span className="tag">{kindLabel(file.kind)}</span>
+            {dateText && <time className="item__date">{dateText}</time>}
           </span>
         </span>
-        <span className="file-row-size">{formatBytes(file.size)}</span>
-      </a>
+        <span className="item__side">
+          <span className="item__size">{formatBytes(file.size)}</span>
+          <IconArrow className="item__arrow" size={18} />
+        </span>
+      </Link>
     </li>
   );
 }

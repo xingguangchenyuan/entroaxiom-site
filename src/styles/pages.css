@@ -1,0 +1,18 @@
+/* ========== 公理页 ========== */
+.axioms { max-width: 920px; }
+.axioms__preface { display: grid; gap: 1.2em; margin-bottom: 44px; max-width: 40rem; font-size: var(--t-lg); line-height: 2.1; color: var(--bone-2); }
+.axioms__preface p:first-child { font-family: var(--font-display); color: var(--bone); font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem); letter-spacing: 0.04em; }
+.axioms__list { display: grid; gap: 18px; margin: 44px 0; }
+.ax { display: grid; grid-template-columns: 110px 1fr; gap: 20px; align-items: center; padding: clamp(22px, 3.4vw, 40px) clamp(20px, 3.4vw, 44px); }
+.ax__num { font-size: 5.6rem; line-height: 1; text-align: center; color: transparent; -webkit-text-stroke: 1px rgba(232, 195, 106, 0.5); user-select: none; }
+.ax__title { font-size: var(--t-xl); letter-spacing: 0.06em; font-weight: 500; margin-bottom: 8px; }
+.ax__body p { color: var(--dust); line-height: 2; margin-bottom: 12px; max-width: 46ch; }
+@media (max-width: 640px) { .ax { grid-template-columns: 1fr; } .ax__num { text-align: left; font-size: 3.6rem; } }
+.horizon-note { padding: clamp(24px, 4vw, 44px); display: grid; gap: 12px; }
+.horizon-note h2 { font-size: var(--t-xl); letter-spacing: 0.1em; font-weight: 500; }
+.horizon-note p { color: var(--bone-2); line-height: 2; max-width: 46ch; }
+.horizon-note__n { color: var(--axiom-hi) !important; font-size: var(--t-sm); }
+.axioms__closing { margin: 56px 0 24px; text-align: center; color: var(--bone-2); font-size: var(--t-xl); letter-spacing: 0.14em; }
+.axioms__cta { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
+.state-icon--lg { width: 64px; height: 64px; }
+.state-actions { margin-top: 10px; }

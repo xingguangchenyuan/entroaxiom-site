@@ -6,6 +6,7 @@ category: 计算机
 tags: [SSH, 运维]
 date: 2024-05-06
 visibility: public
+status: published
 ---
 
 ## 生成密钥

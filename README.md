@@ -1,129 +1,62 @@
-# entroaxiom
+# entroaxiom · 前端
 
 > 在无序的熵变中，确立世界的公理。
 
-访客侧前端单页应用：欢迎页 + 首页 + 三个模块（文件库 / 学习笔记 / 文章总结）。Vite + React 18 + TypeScript，无组件库、无动画库、无后端。需求依据：[《ENTROAXIOM 第一阶段执行文档 v2》](../网页设计/ENTROAXIOM-前端UI与交互执行文档-v2.md)。
+神秘星系 / 黑洞 / 哲学感的个人站点前端。Vite + React 18 + TypeScript，无新增运行时依赖。
+背景是一块实时渲染的 WebGL 黑洞（会随页面切换而「靠近」「远离」），界面用液态玻璃与拟物旋钮组成。
 
-## 环境要求
+## 页面
 
-- Node ≥ 20（开发环境实测 v22.23.3）
-- 无需任何服务端 / 密钥 / 数据库
+| 路径 | 内容 |
+|---|---|
+| `/` | 欢迎层 → 首页（轨道、三条公理、近期轨迹、星图预览、规模读数） |
+| `/notes` `/summaries` `/files` | 列表：搜索、分类筛选、排序，状态写入 URL |
+| `/notes/:id` `/summaries/:id` | 阅读页：目录、阅读进度、图片灯箱、上一篇/下一篇/同星座 |
+| `/files/:id` | 文件详情与预览/下载 |
+| `/atlas` | 星图：内容按分类/标签/文件类型形成的力导向图，另有时间轴视图 |
+| `/axioms` | 公理页（文字在 `src/config/axioms.ts`） |
+| `/owner` | 站长登录 |
+| `/console` | 站长控制台：概览、笔记/总结的 Markdown 编辑器（分栏预览、Ctrl+S）、文件上传与管理 |
+| `Ctrl/⌘ + K` | 全站搜索面板 |
 
-## 常用命令
-
-| 命令 | 作用 |
-| --- | --- |
-| `npm install` | 安装依赖 |
-| `npm run dev` | 开发服务器（正式内容源：默认空状态） |
-| `npm run dev:demo` | 开发服务器（演示内容源，页面带「演示内容」标注） |
-| `npm run build` | 类型检查 + 生产构建（`tsc --noEmit && vite build`，正式内容源） |
-| `npm run build:demo` | 生产构建（演示内容源） |
-| `npm run preview` | 预览 `dist/` 产物 |
-| `npm run images` | 用 `scripts/prepare-images.mjs` 重新生成壁纸产物（见下文「换壁纸」） |
-
-## 内容源（演示模式开关）
-
-构建期环境变量 `VITE_CONTENT_SOURCE` 决定内容来源（构建时静态打包，不做运行时切换）：
-
-- `official`（**默认**）：`src/content/notes|summaries` 正式目录 + `src/content/files.ts`。当前正式内容为空，三个模块展示真实空状态。
-- `demo`：`src/content/demo/` 演示内容（4 篇笔记、3 篇总结、5 个文件），页面右上出现「演示内容」标注。
-
-`.env.example` 已提供示例；直接用命令开关即可，无需改环境：
+## 运行
 
 ```bash
-npm run dev:demo      # 本地看演示内容
-VITE_CONTENT_SOURCE=demo npm run build   # 同上，产物（等价 npm run build:demo）
+npm ci
+npm run dev          # 对接本机后端 http://127.0.0.1:8000（/api 与 /uploads 由 Vite 代理，保持同源）
+npm run dev:demo     # 不需要后端，使用随包演示内容
+npm run build        # 类型检查 + 构建到 dist/
+npm run build:demo
+npm test             # 分页、校验字段与公开内容缓存回归
 ```
 
-## 项目结构
+后端端口不同时：`VITE_DEV_BACKEND=http://127.0.0.1:9000 npm run dev`。
 
-```
-src/
-  config/     site.ts（文案/导航/标题模板）、wallpapers.ts（壁纸配置，含 focus）
-  styles/     tokens.css（设计令牌）、base.css（reset）、reading.css（正文）、components.css（组件）
-  hooks/      useSessionEntered / useListQuery / useScrollRestore / useFocusTrap / useBodyScrollLock /
-              usePrefersReducedMotion / useDocumentTitle
-  components/ layout/（WallpaperLayer/TopNav/MobileMenu/ContentPanel/SkipLink）、welcome/、list/、
-              reading/（Markdown/Toc/Lightbox）、state/（四种状态组件）
-  pages/      首页 + 文件库(列表/详情) + 学习笔记(列表/详情) + 文章总结(列表/详情) + 404
-  content/    frontmatter.ts、loader.ts（唯一数据出口）、files.ts、demo/、notes+summaries（正式内容目录）
-```
+## 与后端的对接约定（同源）
 
-## 路由与刷新
+- 只请求同源 `/api/public/*`、`/api/auth/*`、`/api/admin/*`，不支持也不需要 `VITE_API_BASE`。
+- 响应信封 `{success, data, error:{code,message,details}}`；公开接口 404 一律显示「内容不存在」（私密/草稿对访客不可见）。
+- 访客不会触发 `/api/auth/*`：只有登录成功过的浏览器才会在启动时问一次 `/api/auth/me`。
+- 站长会话是 HttpOnly Cookie，前端读不到；新建内容默认「仅自己 + 草稿」，需要手动切到「公开 + 已发布」访客才看得到。
+- 生产环境用后端包内 `deploy/nginx/conf.d/site.conf` / `site-https.conf.example`：`/api` 转发到 FastAPI，`/uploads/public/` 由 Nginx 只读提供，其余上传目录不对外开放；静态页面指向 `dist/` 并配置 history 回退。不要把整个上传目录直接开放，也不要在生产关闭 Secure Cookie。
 
-history 模式，路由表：
+前端 ZIP 保留原来的 `site/` 根目录。若使用后端随附的 Docker Compose，请将该目录命名为 `entroaxiom-site`，与 `entroaxiom-backend` 并列，或按实际路径调整 Compose 的前端 `dist` 挂载。
 
-```
-/                首页（欢迎层覆盖其上）
-/files           文件库        /files/:id     文件详情（图片/PDF 在线预览，其余有回退）
-/notes           学习笔记      /notes/:id     正文 + 右侧目录（移动端收起式）
-/summaries       文章总结      /summaries/:id 同上
-*                404
-```
+## 想改什么，去哪里改
 
-深链（如 `/notes/xxx`）直接打开目标页，不重播欢迎层。**生产部署必须配 history 回退**（见下，否则深链刷新 404）。
+- 站名、标语、导航：`src/config/site.ts`
+- 三条公理与首页哲学文案：`src/config/axioms.ts`
+- 三个「世界」（笔记/总结/文件）的名称与说明：`src/config/worlds.ts`
+- 颜色、字号、间距：`src/styles/tokens.css`；玻璃与旋钮：`src/styles/glass.css`
+- 黑洞的形态与各页面机位：`src/components/sky/`
+- 演示内容：`src/content/demo/`（仅 `dev:demo` / `build:demo` 使用）
 
-## 部署（Nginx 静态托管）
+标题字体 `Entro Serif` 是按本站界面文字裁出的子集；你在控制台写的新标题里若有子集外的汉字，会自动回退到系统宋体/思源宋体，不会缺字。
 
-1. `npm run build`（或 `npm run build:demo`）→ 产物在 `dist/`。
-2. 上传 `dist/` 内容到站点根目录（如 `/var/www/entroaxiom`）。
-3. Nginx 配置（history 回退 + 缓存策略）：
+## 已验证与未验证
 
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.example;
+2026-10-16 修复版已实际通过 `npm run build`（TypeScript + Vite 5）及 `npm test`（14 项）。已连接本地真实 FastAPI 后端进行浏览器回归：已有 ID `new` 的编辑、新建保存、导航/后退的未保存提示、退出确认、422 字段高亮，以及撤回公开内容后首页和搜索更新。测试使用独立临时数据库，不触及正式数据。
 
-    root /var/www/entroaxiom;
-    index index.html;
+原版 34 个视觉相关文件已逐一进行 SHA256 比对，样式、字体资源、首页视觉、黑洞、配置及基础 UI 组件均原样保留。确认提示复用原有组件，没有重做界面。
 
-    # 前端路由回退到 index.html（history 模式深链刷新不 404）
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # 带 hash 的静态资源：长缓存
-    location /assets/ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # 壁纸/演示资源：中缓存（换图后需刷新版本号，见「换壁纸」）
-    location /media/ {
-        expires 30d;
-        add_header Cache-Control "public";
-    }
-    location /demo-assets/ {
-        expires 30d;
-        add_header Cache-Control "public";
-    }
-
-    # index.html 不缓存，保证发版即时生效
-    location = /index.html {
-        add_header Cache-Control "no-cache";
-    }
-}
-```
-
-**部署到子路径**：改两处 —— `vite.config.ts` 的 `base` 与 `src/main.tsx` 的 `<BrowserRouter basename>`（值如 `/sub/`，与 Nginx `location /sub/` 对应）。
-
-## 换壁纸
-
-1. 把新原图放到任意位置（建议 `WebProjects/WebPictures/`，不进 git）。
-2. 运行 `node scripts/prepare-images.mjs <欢迎图路径> <网站图路径>`（可省略参数，脚本有默认路径）。脚本用 sharp 生成 desktop/mobile × avif/webp/jpg 三档产物到 `public/media/`，并打印实际尺寸与体积（质量：AVIF q50 / WebP q78 / JPEG q82，超出 1MB 自动降级，最低 q40/q70/q74）。
-3. 对照产物看两眼，在 `src/config/wallpapers.ts` 里把两张图的 `focus.desktop` / `focus.mobile` 改成主体位置（`object-position` 百分比；常见竖屏裁切发生在横向，先看横向主体在哪）。
-4. 重新构建；**发布时给引用加版本号强制刷新缓存**：改 `src/config/wallpapers.ts` 中四个产物路径，如 `/media/site-desktop.jpg?v=2`（Nginx 对 `/media/` 缓存 30 天）。
-
-## 设计要点速览
-
-- 欢迎层：首页常驻 + `position: fixed` 覆盖层，进入为真实交叉淡化；会话内只播一次（`sessionStorage`），深链接不补播；欢迎层可见时舞台 `inert`，防止导航被 Tab 聚焦。
-- 搜索/分类：提交式（回车或点「搜索」，不边打边筛）；关键词 `q` 与分类 `cat` 写在 URL（`replace: true`），分享链接可复现筛选；列表返回时滚动位置与会话内恢复。
-- 正文：本地 Markdown 渲染（`react-markdown` + `remark-gfm` + `rehype-slug`，不开 `rehype-raw`）；宽表格容器内横向滚动；图片点击放大（遮罩/关闭按钮/Esc 三退出 + 焦点陷阱 + 滚动锁）；TOC 由标题生成，≥3 个才显示，点击平滑定位避开固定导航。
-- 无障碍：`skip-link`、`:focus-visible` 统一焦点、`prefers-reduced-motion` 全局降级、触控目标 ≥44px、`100dvh` + `env(safe-area-inset-*)`。
-- 异常兜底：顶层 ErrorBoundary；三种数据状态（空 / 无结果 / 加载失败）文案不混用；未知 ID 显示「内容不存在」。
-
-## 已知边界
-
-- PDF 预览用 `<object>` 内嵌，极少数浏览器（如旧 iOS Safari）可能显示「无法预览」回退文案 + 下载按钮。
-- 无后台：全部内容构建期打包；正式内容为空时界面即真实空状态。
-- 更详细的取舍与验证记录见 [`DELIVERY.md`](./DELIVERY.md)。
+未验证：目标 Linux 服务器、Docker/Nginx/HTTPS 实际部署及生产环境数据迁移。构建仍有单个 JS 包超过 500 kB 的体积提示（非构建失败）；此次未做视觉或加载结构重构。

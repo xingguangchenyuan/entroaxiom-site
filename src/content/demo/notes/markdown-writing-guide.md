@@ -6,6 +6,7 @@ category: 工具
 tags: [Markdown, 写作]
 date: 2024-04-05
 visibility: public
+status: published
 ---
 
 写学习笔记最怕两件事：格式记不住，图片放不进。这篇把本站正文支持的格式过一遍，图片部分用两张示例图演示。

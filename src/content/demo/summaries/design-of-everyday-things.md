@@ -2,9 +2,11 @@
 id: design-of-everyday-things
 title: 《设计心理学》要点回顾
 summary: 诺曼提出的概念回顾：示能性、意符、映射、反馈、概念模型与设计失败的两大根源。附一张自己做的"好设计检查清单"。
+category: 设计
 tags: [读书笔记, 设计]
 date: 2024-05-20
 visibility: public
+status: published
 ---
 
 - 示能性（affordance）：物体本身提供的操作可能；意符（signifier）是让人看见这种可能的提示

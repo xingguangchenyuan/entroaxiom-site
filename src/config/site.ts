@@ -1,6 +1,7 @@
-/* 站点名称、导航、标题模板与全部用户可见中文文案集中于此 */
+/* 站点名称、导航、标题模板与用户可见的中文文案集中于此 */
 
 export const SITE_NAME = 'entroaxiom';
+export const SITE_TAGLINE = '在无序的熵变中，确立世界的公理。';
 
 export interface NavItem {
   to: string;
@@ -10,15 +11,19 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { to: '/', label: '首页', end: true },
-  { to: '/files', label: '文件库' },
   { to: '/notes', label: '学习笔记' },
   { to: '/summaries', label: '文章总结' },
+  { to: '/files', label: '文件库' },
+  { to: '/atlas', label: '星图' },
+  { to: '/axioms', label: '公理' },
 ];
 
 export const welcomeCopy = {
   title: '欢迎来到我的宇宙',
   sub: '在无序的熵变中，收藏灵感，记录思考，寻找属于自己的公理。',
-  enter: '进入我的星图 ↗',
+  enter: '进入我的星图',
+  hint: '按 Enter 进入',
+  lines: ['万物趋向散乱', '而我们仍在整理'],
 };
 
 export const moduleTitles = {
@@ -50,11 +55,12 @@ export const copy = {
   loadFailed: '内容加载失败',
   retry: '重试',
   notFound: {
-    title: '页面不存在',
-    desc: '你访问的页面不存在或已被移动。',
+    title: '这里是视界之外',
+    desc: '你访问的页面不存在，或已被移动。',
     backHome: '返回首页',
   },
   contentMissing: '内容不存在',
+  contentMissingDesc: '这篇内容不存在，或者没有公开。',
   backToList: '返回列表',
   demoBadge: '演示内容',
   searchSubmit: '搜索',

@@ -1,0 +1,80 @@
+/* ========== 星图 ========== */
+.cg { position: relative; width: 100%; }
+.cg__svg { width: 100%; height: auto; display: block; overflow: visible; }
+.cg__edge { stroke: rgba(236, 230, 216, 0.24); stroke-width: 1; transition: stroke var(--dur-2), opacity var(--dur-3); }
+.cg__edge.is-hot { stroke: rgba(247, 225, 160, 0.85); stroke-width: 1.4; }
+.cg__edge.is-dim { opacity: 0.25; }
+.cg__edge.is-off { opacity: 0; }
+.cg__node { transition: opacity var(--dur-3) var(--ease-out); outline: none; cursor: pointer; }
+.cg--compact .cg__node { cursor: inherit; }
+.cg__node.is-dim { opacity: 0.2; }
+.cg__node.is-off { opacity: 0; pointer-events: none; }
+.cg__hit { fill: transparent; stroke: transparent; }
+.cg__node:focus-visible .cg__hit { stroke: var(--axiom); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.cg__dot { transition: r var(--dur-2) var(--ease-spring); animation: twinkle 5.5s ease-in-out infinite; animation-delay: calc(var(--ph) * -5.5s); }
+.cg__halo { opacity: 0.16; transition: opacity var(--dur-3); }
+.cg__node.is-focus .cg__halo { opacity: 0.55; }
+.cg__node.is-focus .cg__dot { transform: scale(1.25); transform-box: fill-box; transform-origin: center; }
+@keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.62; } }
+.cg__star--notes .cg__dot, .cg__star--notes .cg__halo { fill: var(--frost); }
+.cg__star--summaries .cg__dot, .cg__star--summaries .cg__halo { fill: var(--axiom); }
+.cg__star--files .cg__dot, .cg__star--files .cg__halo { fill: var(--moss); }
+.cg__ring { fill: rgba(4, 5, 10, 0.6); stroke: var(--dust); stroke-width: 1; stroke-dasharray: 2 4; transform-box: fill-box; transform-origin: center; animation: spin 60s linear infinite; }
+.cg__hub--cat .cg__ring { stroke: var(--axiom); stroke-dasharray: 3 5; }
+.cg__hub--fkind .cg__ring { stroke: var(--moss); }
+.cg__core { fill: var(--bone-2); }
+.cg__hub--cat .cg__core { fill: var(--axiom-hi); }
+.cg__node.is-selected .cg__ring { stroke: var(--axiom-hi); stroke-dasharray: none; stroke-width: 1.6; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.cg__label { font-family: var(--font-display); font-size: 15px; letter-spacing: 0.06em; fill: var(--bone-2); stroke: rgba(4, 5, 10, 0.9); stroke-width: 4px; paint-order: stroke; pointer-events: none; }
+.cg__hub--tag .cg__label { font-size: 12.5px; fill: var(--dust); }
+.cg__hub--cat .cg__label { fill: var(--axiom-hi); font-size: 16px; }
+.cg--compact .cg__label { font-size: 17px; }
+.cg__tip { position: absolute; z-index: 5; transform: translate(-50%, calc(-100% - 18px)); padding: 10px 14px; max-width: 260px; pointer-events: none; animation: fade-in 160ms var(--ease-out) both; }
+.cg__tip-title { font-size: var(--t-sm); color: var(--bone); line-height: 1.5; }
+.cg__tip-meta { font-size: var(--t-xs); color: var(--dust); margin-top: 2px; }
+.cg__tip::before, .cg__tip::after { display: none; }
+
+/* 页面：工具栏 + 图 */
+.atlas-bar { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.atlas-legend { display: flex; flex-wrap: wrap; gap: 10px; }
+.atlas-legend .chip::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
+.atlas-stage { padding: clamp(10px, 2vw, 22px); }
+.atlas-side { margin-top: 22px; padding: 22px clamp(16px, 3vw, 30px); }
+.atlas-side__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.atlas-side__title { font-family: var(--font-display); font-size: var(--t-xl); letter-spacing: 0.08em; }
+
+/* 轨迹（时间线） */
+.tl { position: relative; padding-left: 34px; }
+.tl::before { content: ''; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 1px; background: linear-gradient(180deg, rgba(232, 195, 106, 0.6), var(--line-2) 12%, var(--line) 90%, transparent); }
+.tl__group + .tl__group { margin-top: 38px; }
+.tl__month { position: sticky; top: calc(var(--nav-h) - 4px); z-index: 2; display: inline-block; margin-bottom: 14px; padding: 4px 14px; border-radius: var(--r-pill); font-family: var(--font-display); letter-spacing: 0.1em; font-size: var(--t-md); background: rgba(8, 10, 18, 0.7); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line); }
+.tl__item { position: relative; }
+.tl__item::before { content: ''; position: absolute; left: -30px; top: 24px; width: 11px; height: 11px; border-radius: 50%; background: var(--void); border: 1.5px solid var(--c, var(--axiom)); box-shadow: 0 0 12px -1px var(--c, var(--axiom)); transition: transform var(--dur-3) var(--ease-spring), background var(--dur-2); }
+.tl__item:hover::before { transform: scale(1.5); background: var(--c, var(--axiom)); }
+.tl__item--notes { --c: var(--frost); }
+.tl__item--summaries { --c: var(--axiom); }
+.tl__item--files { --c: var(--moss); }
+.tl__link { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; align-items: baseline; padding: 14px 14px; margin: 0 -14px; border-radius: var(--r-md); transition: background var(--dur-2); }
+.tl__link:hover { background: rgba(255, 255, 255, 0.04); }
+.tl__day { color: var(--dust); font-variant-numeric: tabular-nums; font-size: var(--t-sm); }
+.tl__title { color: var(--bone); font-weight: 500; overflow-wrap: anywhere; }
+.tl__sum { display: block; color: var(--dust); font-size: var(--t-sm); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 640px) { .tl__link { grid-template-columns: 1fr; gap: 4px; } .tl__link > .tag { justify-self: start; } }
+
+/* 标签索引 */
+.tagcloud { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: baseline; padding: 6px 0 4px; }
+.tagcloud .chip { font-size: calc(var(--t-sm) + var(--w, 0) * 0.28rem); min-height: calc(34px + var(--w, 0) * 5px); }
+
+/* 搜索结果列表（星图侧栏、标签页共用） */
+.hit-list li + li { border-top: 1px solid var(--line); }
+.hit { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: baseline; padding: 14px 6px; border-radius: var(--r-sm); transition: background var(--dur-2); }
+.hit:hover { background: rgba(255, 255, 255, 0.04); }
+.hit__title { color: var(--bone); font-weight: 500; }
+.hit__sum { grid-column: 2; color: var(--dust); font-size: var(--t-sm); }
+
+.atlas-hint { color: var(--dust); font-size: var(--t-sm); }
+.skeleton--stage { height: 520px; border-radius: var(--r-lg); }
+.tagsec { margin-bottom: 30px; }
+.tagsec__h { margin-bottom: 10px; color: var(--dust); font-size: var(--t-sm); font-weight: 500; }
+.atlas-foot { margin-top: 36px; }

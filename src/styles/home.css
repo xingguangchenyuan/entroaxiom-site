@@ -1,0 +1,110 @@
+.home { outline: none; }
+
+/* ---- 首屏 ---- */
+.hero { position: relative; min-height: 100vh; min-height: 100svh; max-width: 1360px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; padding: calc(var(--nav-h) + 24px) var(--gutter) 88px; }
+.hero__copy { max-width: none; }
+.hero__title { font-size: clamp(2.2rem, 0.9rem + 3.7vw, 4.2rem); white-space: nowrap; line-height: 1.28; letter-spacing: 0.05em; text-shadow: 0 2px 36px rgba(0, 0, 0, 0.75); }
+.hero__line { display: block; animation: line-in 1.3s var(--ease-out) both; }
+.hero__line:nth-child(2) { animation-delay: 0.16s; }
+@keyframes line-in { from { opacity: 0; transform: translateY(0.3em); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
+.hero__lead { margin-top: 26px; max-width: 30rem; color: var(--bone-2); font-size: var(--t-lg); line-height: 1.95; text-shadow: 0 1px 20px rgba(0, 0, 0, 0.9); animation: fade-in 1.2s var(--ease-out) 0.5s both; }
+.hero__actions { margin-top: 38px; display: flex; flex-wrap: wrap; align-items: center; gap: 18px 22px; animation: fade-in 1.2s var(--ease-out) 0.75s both; }
+.hero__search kbd { font-family: var(--font-sans); font-size: 0.75rem; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--line-2); background: rgba(0, 0, 0, 0.3); margin-left: 2px; }
+.hero__cue { position: absolute; left: 50%; bottom: 26px; width: 1px; height: 54px; background: linear-gradient(180deg, transparent, var(--line-2)); overflow: hidden; }
+.hero__cue span { position: absolute; left: -1px; top: 0; width: 3px; height: 14px; border-radius: 2px; background: var(--axiom); box-shadow: 0 0 10px var(--axiom); animation: cue 2.6s var(--ease-inout) infinite; }
+@keyframes cue { 0% { transform: translateY(-14px); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(56px); opacity: 0; } }
+@media (max-width: 760px) {
+  .hero { justify-content: flex-start; padding-top: calc(var(--nav-h) + 36px); }
+  .hero__title { font-size: clamp(1.9rem, 1.1rem + 3.9vw, 2.8rem); letter-spacing: 0.03em; }
+  .hero__lead { font-size: var(--t-md); margin-top: 18px; line-height: 1.85; }
+  /* 手机：两个按钮并排；触屏没有「/」键，搜索提示收起（顶栏有搜索图标） */
+  .hero__actions { margin-top: 24px; flex-wrap: nowrap; gap: 12px; }
+  .hero__actions .knob { flex: 1 1 0; min-width: 0; }
+  .hero__search { display: none; }
+}
+
+/* ---- 正文区 ---- */
+.home-body { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter) 40px; display: flex; flex-direction: column; gap: clamp(72px, 10vw, 132px); }
+.home-sec__head { margin-bottom: 28px; }
+.home-sec__head--split { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+.home-sec__title { font-size: var(--t-2xl); letter-spacing: 0.1em; line-height: 1.2; font-weight: 500; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.7); }
+.home-sec__lead { margin-top: 10px; color: var(--dust); }
+
+/* 三条轨道 */
+.orbits { padding: 8px; }
+.orbit { --tone: var(--axiom); position: relative; isolation: isolate; display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: clamp(16px, 3vw, 32px); align-items: center; padding: 26px clamp(16px, 2.6vw, 30px); border-radius: var(--r-md); transition: transform var(--dur-3) var(--ease-out); }
+.orbit--frost { --tone: var(--frost); }
+.orbit--gold { --tone: var(--axiom); }
+.orbit--moss { --tone: var(--moss); }
+.orbit + .orbit::before { content: ''; position: absolute; top: 0; left: 24px; right: 24px; height: 1px; background: var(--line); }
+.orbit::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(420px circle at var(--lx) var(--ly), color-mix(in srgb, var(--tone) 16%, transparent), transparent 70%); opacity: 0; transition: opacity var(--dur-3) var(--ease-out); }
+.orbit:hover::after, .orbit:focus-visible::after { opacity: 1; }
+.orbit__sigil { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 0 46px -12px var(--tone); background: var(--slab); }
+.orbit__sigil img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.4s var(--ease-out), filter var(--dur-3); filter: saturate(0.9) brightness(0.92); }
+.orbit:hover .orbit__sigil img { transform: rotate(24deg) scale(1.12); filter: saturate(1.15) brightness(1.08); }
+.orbit__body { display: grid; gap: 4px; min-width: 0; }
+.orbit__name { font-size: var(--t-xl); letter-spacing: 0.1em; }
+.orbit__motto { color: var(--tone); font-size: var(--t-md); letter-spacing: 0.08em; }
+.orbit__desc { margin-top: 8px; color: var(--bone-2); font-size: var(--t-md); line-height: 1.8; max-width: 52ch; }
+.orbit__side { display: flex; align-items: baseline; gap: 6px; color: var(--bone-2); }
+.orbit__count { font-family: var(--font-display); font-size: var(--t-2xl); line-height: 1; font-variant-numeric: tabular-nums; color: var(--bone); }
+.orbit__unit { font-size: var(--t-sm); color: var(--dust); }
+.orbit__arrow { align-self: center; margin-left: 10px; color: var(--dust); transition: transform var(--dur-3) var(--ease-spring), color var(--dur-2); }
+.orbit:hover .orbit__arrow { transform: translateX(6px); color: var(--tone); }
+@media (max-width: 700px) {
+  .orbit { grid-template-columns: 64px minmax(0, 1fr); padding: 20px 14px; }
+  .orbit__sigil { width: 64px; height: 64px; }
+  .orbit__side { grid-column: 2; }
+  .orbit__arrow { margin-left: auto; }
+}
+
+/* 三条公理 */
+.axioms-intro { max-width: 760px; margin-bottom: 40px; }
+.axioms-intro__quote { margin-top: 16px; color: var(--bone-2); font-size: var(--t-lg); line-height: 2; letter-spacing: 0.04em; }
+.axioms-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+.axiom { position: relative; padding: 4px clamp(18px, 2.6vw, 34px) 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.axiom:first-child { padding-left: 0; }
+.axiom + .axiom { border-left: 1px solid var(--line); }
+.axiom__num { font-size: 5.6rem; line-height: 0.9; color: transparent; -webkit-text-stroke: 1px rgba(232, 195, 106, 0.38); user-select: none; transition: -webkit-text-stroke-color var(--dur-3), transform 1s var(--ease-out); }
+.axiom:hover .axiom__num { -webkit-text-stroke-color: rgba(232, 195, 106, 0.9); transform: translateY(-4px); }
+.axiom__title { font-size: clamp(1.25rem, 1.05rem + 0.7vw, 1.6rem); letter-spacing: 0.05em; font-weight: 500; text-wrap: balance; }
+.axiom__body { color: var(--dust); font-size: var(--t-sm); line-height: 1.95; flex: 1; }
+@media (max-width: 860px) {
+  .axioms-grid { grid-template-columns: 1fr; gap: 34px; }
+  .axiom, .axiom:first-child { padding: 0; }
+  .axiom + .axiom { border-left: 0; border-top: 1px solid var(--line); padding-top: 30px; }
+  .axiom__num { font-size: 3.6rem; }
+}
+
+/* 最近的轨迹 */
+.recent { display: flex; flex-direction: column; }
+.recent li + li { border-top: 1px solid var(--line); }
+.recent__row { display: grid; grid-template-columns: 96px 76px minmax(0, 1fr) 20px; gap: 18px; align-items: center; padding: 18px 12px; margin: 0 -12px; border-radius: var(--r-md); transition: background var(--dur-2); }
+.recent__row:hover { background: rgba(255, 255, 255, 0.04); }
+.recent__row > .tag { justify-self: start; }
+.recent__date { color: var(--dust); font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
+.recent__main { display: grid; gap: 2px; min-width: 0; }
+.recent__title { color: var(--bone); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent__sum { color: var(--dust); font-size: var(--t-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent__arrow { color: var(--ash); transition: transform var(--dur-3) var(--ease-spring), color var(--dur-2); }
+.recent__row:hover .recent__arrow { transform: translateX(5px); color: var(--axiom); }
+@media (max-width: 700px) {
+  .recent__row { grid-template-columns: 1fr 18px; gap: 6px 10px; }
+  .recent__date { grid-column: 1; grid-row: 1; }
+  .recent__row > .tag { grid-column: 1; grid-row: 2; justify-self: start; }
+  .recent__main { grid-column: 1; grid-row: 3; }
+  .recent__arrow { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+}
+
+/* 星图预览 */
+.teaser { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(16px, 3vw, 40px); align-items: center; padding: clamp(22px, 4vw, 44px); overflow: hidden; }
+.teaser__text { display: grid; gap: 18px; justify-items: start; }
+.teaser__lead { color: var(--bone-2); line-height: 1.95; max-width: 34ch; }
+.teaser__map { display: block; border-radius: var(--r-md); }
+@media (max-width: 860px) { .teaser { grid-template-columns: 1fr; } }
+
+/* 宇宙的尺度 */
+.scale { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.readout__unit { font-size: var(--t-md); margin-left: 4px; color: var(--bone-2); text-shadow: none; }
+@media (max-width: 760px) { .scale { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .readout__unit { display: block; margin: 2px 0 0; font-size: var(--t-sm); } }

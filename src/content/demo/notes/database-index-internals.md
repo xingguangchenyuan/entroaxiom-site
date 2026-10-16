@@ -7,6 +7,7 @@ tags: [数据库, 索引]
 date: 2024-03-20
 updated: 2024-04-28
 visibility: public
+status: published
 ---
 
 索引是数据库性能的第一杠杆。这篇笔记记录索引实现层面的关键概念，末尾用一张大表对比常见索引类型。

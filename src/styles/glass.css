@@ -1,0 +1,247 @@
+/* ========== 液态玻璃 + 拟物控件 ==========
+   指针光：lib/pointerLight.ts 在 .lit 元素上写入 --lx/--ly（指针位置，px）与 --la（角度，deg）。
+   没有 JS / 没有指针时，使用 50% 位置的静态高光。 */
+
+.lit { --lx: 50%; --ly: -20%; --la: 135deg; --lo: 0; }
+
+/* 玻璃面板 */
+.glass {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--r-lg);
+  background: var(--glass-fill), rgba(10, 12, 20, 0.5);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 28px rgba(141, 182, 255, 0.045),
+    0 30px 70px -28px rgba(0, 0, 0, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5) brightness(0.92);
+  backdrop-filter: blur(22px) saturate(1.5) brightness(0.92);
+}
+/* 边缘流光：跟随指针角度扫过描边 */
+.glass::before {
+  content: '';
+  position: absolute; inset: -1px; z-index: 1;
+  border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from var(--la) at var(--lx) var(--ly),
+    rgba(255, 255, 255, 0) 0deg, rgba(247, 225, 160, 0.85) 40deg, rgba(141, 182, 255, 0.5) 90deg, rgba(255, 255, 255, 0) 150deg 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: calc(0.28 + var(--lo) * 0.72);
+  transition: opacity var(--dur-3) var(--ease-out);
+}
+/* 镜面高光：像一滴水里反出来的窗光 */
+.glass::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  border-radius: inherit; pointer-events: none;
+  background: radial-gradient(420px circle at var(--lx) var(--ly), rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0) 60%);
+  opacity: calc(0.35 + var(--lo) * 0.65);
+  transition: opacity var(--dur-3) var(--ease-out);
+}
+.glass > * { position: relative; z-index: 2; }
+.glass--sm { border-radius: var(--r-md); }
+.glass--pill { border-radius: var(--r-pill); }
+.glass--flat { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 14px 40px -24px rgba(0, 0, 0, 0.8); }
+.glass--interactive { transition: transform var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out), border-color var(--dur-2); }
+.glass--interactive:hover { transform: translateY(-3px); border-color: rgba(255, 255, 255, 0.22); }
+
+/* 不支持 backdrop-filter 的浏览器：提高不透明度保证可读 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: var(--glass-fill), rgba(14, 17, 28, 0.94); }
+}
+
+/* ========== 旋钮按钮（拟物） ==========
+   结构：<button class="knob"><span class="knob__cap">…</span></button>
+   外层是“底座”，cap 是浮起的金属帽；按下时帽子沉下去，LED 变亮。 */
+.knob {
+  --cap-y: -4px;
+  position: relative;
+  display: inline-flex;
+  border: 0; padding: 0; background: none;
+  border-radius: var(--r-pill);
+  font-size: var(--t-md);
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: filter var(--dur-2);
+}
+.knob::before { /* 底座凹槽 */
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(180deg, #05060a, #12141f);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.1), 0 10px 26px -10px rgba(232, 195, 106, 0.28);
+  transition: box-shadow var(--dur-3);
+}
+.knob__cap {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6em;
+  min-height: 48px; padding: 0 1.7em;
+  border-radius: inherit;
+  font-weight: 600; letter-spacing: 0.06em; white-space: nowrap;
+  color: var(--axiom-ink);
+  background:
+    radial-gradient(120% 90% at 30% 0%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(180deg, #f7e1a0 0%, #e8c36a 48%, #c99a3c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -3px 5px rgba(122, 78, 8, 0.5),
+    0 1px 0 #8a6420,
+    0 4px 0 #6e4d14,
+    0 12px 18px -4px rgba(0, 0, 0, 0.7);
+  transform: translateY(var(--cap-y));
+  transition: transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out), filter var(--dur-2);
+}
+.knob__cap::after { /* 扫光 */
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.55) 50%, transparent 62%);
+  background-size: 260% 100%; background-position: 130% 0; mix-blend-mode: soft-light;
+  transition: background-position 900ms var(--ease-out);
+}
+.knob:hover .knob__cap::after { background-position: -30% 0; }
+.knob:hover .knob__cap { --cap-y: -5px; filter: brightness(1.06); }
+.knob:active .knob__cap, .knob.is-pressed .knob__cap {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -2px 3px rgba(122, 78, 8, 0.5), 0 1px 0 #8a6420, 0 1px 0 #6e4d14, 0 4px 8px -2px rgba(0, 0, 0, 0.7);
+}
+.knob:active::before { box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 34px -4px rgba(232, 195, 106, 0.55); }
+.knob:focus-visible { box-shadow: var(--focus); border-radius: var(--r-pill); }
+.knob[disabled], .knob[aria-disabled='true'] { opacity: 0.45; pointer-events: none; filter: saturate(0.5); }
+
+/* 玻璃款（次要操作）：深色树脂旋钮 */
+.knob--dark .knob__cap {
+  color: var(--bone);
+  background:
+    radial-gradient(120% 90% at 30% 0%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(180deg, #2b3043 0%, #1a1e2e 55%, #12151f 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -3px 5px rgba(0, 0, 0, 0.55), 0 1px 0 #05060a, 0 4px 0 #05060a, 0 12px 18px -4px rgba(0, 0, 0, 0.75);
+}
+.knob--dark:active .knob__cap, .knob--dark.is-pressed .knob__cap { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.55), 0 1px 0 #05060a, 0 4px 8px -2px rgba(0, 0, 0, 0.7); }
+.knob--danger .knob__cap {
+  color: #fff;
+  background: radial-gradient(120% 90% at 30% 0%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, #f08a79 0%, #d4503f 55%, #a83325 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 5px rgba(80, 10, 5, 0.5), 0 1px 0 #6b1f15, 0 4px 0 #561710, 0 12px 18px -4px rgba(0, 0, 0, 0.7);
+}
+.knob--sm .knob__cap { min-height: 36px; padding: 0 1.15em; font-size: var(--t-sm); }
+.knob--sm { --cap-y: -3px; }
+.knob--lg .knob__cap { min-height: 58px; padding: 0 2.3em; font-size: var(--t-lg); }
+.knob--block { display: flex; width: 100%; }
+.knob--block .knob__cap { width: 100%; }
+
+.knob__led { /* 指示灯，busy 时呼吸 */
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(27, 19, 6, 0.35); box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+.knob.is-busy .knob__led { background: #fff4c9; box-shadow: 0 0 8px 2px rgba(255, 244, 201, 0.9); animation: led 1.1s var(--ease-inout) infinite; }
+@keyframes led { 50% { opacity: 0.25; } }
+
+/* 次级：无底座的文字操作 */
+.text-action {
+  display: inline-flex; align-items: center; gap: 0.4em;
+  padding: 6px 2px; border: 0; background: none;
+  color: var(--bone-2); font-size: var(--t-sm);
+  background-image: linear-gradient(var(--axiom), var(--axiom));
+  background-size: 0% 1px; background-position: 0 100%; background-repeat: no-repeat;
+  transition: color var(--dur-2), background-size var(--dur-3) var(--ease-out);
+}
+.text-action:hover { color: var(--axiom-hi); background-size: 100% 1px; }
+
+/* ========== 凹槽输入 ========== */
+.slot {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  min-height: 48px; padding: 0 16px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.28));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.7), inset 0 -1px 0 rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition: border-color var(--dur-2), box-shadow var(--dur-3) var(--ease-out);
+}
+.slot:focus-within { border-color: rgba(232, 195, 106, 0.55); box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.7), 0 0 0 3px rgba(232, 195, 106, 0.14), 0 0 28px -4px rgba(232, 195, 106, 0.35); }
+.slot input, .slot textarea, .slot select {
+  flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; outline: none; box-shadow: none;
+  color: var(--bone); font-size: var(--t-md);
+}
+.slot input::placeholder, .slot textarea::placeholder { color: var(--ash); }
+.slot input:focus-visible, .slot textarea:focus-visible, .slot select:focus-visible { box-shadow: none; }
+.slot--area { border-radius: var(--r-md); align-items: flex-start; padding: 12px 16px; }
+.slot--area textarea { resize: vertical; line-height: 1.65; }
+.slot select { appearance: none; cursor: pointer; padding-right: 8px; }
+.slot select option { background: var(--slab); color: var(--bone); }
+.slot__icon { width: 18px; height: 18px; color: var(--dust); flex: none; }
+.slot--error { border-color: rgba(232, 122, 140, 0.6); }
+
+/* ========== 筛选片（可按压） ========== */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 34px; padding: 0 14px; border-radius: var(--r-pill);
+  font-size: var(--t-sm); color: var(--bone-2); white-space: nowrap;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 3px 0 rgba(0, 0, 0, 0.55);
+  transform: translateY(0);
+  transition: transform 140ms var(--ease-out), box-shadow 140ms, color var(--dur-2), background var(--dur-2), border-color var(--dur-2);
+}
+.chip:hover { color: var(--bone); border-color: rgba(255, 255, 255, 0.22); }
+.chip:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 0 rgba(0, 0, 0, 0.55); }
+.chip[aria-pressed='true'], .chip.is-on {
+  color: var(--axiom-hi);
+  background: linear-gradient(180deg, rgba(232, 195, 106, 0.26), rgba(232, 195, 106, 0.07));
+  border-color: rgba(232, 195, 106, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 190, 0.35), 0 0 22px -6px rgba(232, 195, 106, 0.55), 0 1px 0 rgba(0, 0, 0, 0.55);
+  transform: translateY(2px);
+}
+.chip__n { font-variant-numeric: tabular-nums; opacity: 0.6; font-size: var(--t-xs); }
+
+/* ========== 开关 ========== */
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; color: var(--bone-2); font-size: var(--t-sm); }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch__track {
+  position: relative; width: 50px; height: 28px; border-radius: var(--r-pill); flex: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.3));
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.09);
+  transition: background var(--dur-3) var(--ease-out), box-shadow var(--dur-3);
+}
+.switch__knob {
+  position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, #fff, #c9c4b6 55%, #8d897d);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6), inset 0 -2px 3px rgba(0, 0, 0, 0.25);
+  transition: transform var(--dur-3) var(--ease-spring);
+}
+.switch input:checked + .switch__track { background: linear-gradient(180deg, #b98a2e, #e8c36a); box-shadow: inset 0 3px 6px rgba(80, 45, 0, 0.55), 0 0 22px -4px rgba(232, 195, 106, 0.6); }
+.switch input:checked + .switch__track .switch__knob { transform: translateX(22px); }
+.switch input:focus-visible + .switch__track { box-shadow: var(--focus); }
+
+/* ========== 分段控制（滑动滑块） ========== */
+.seg { --n: 2; --i: 0; position: relative; display: inline-grid; grid-template-columns: repeat(var(--n), 1fr); padding: 4px; border-radius: var(--r-pill);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.3)); box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.08); }
+.seg__thumb { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / var(--n)); border-radius: var(--r-pill);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.07)); border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 12px -2px rgba(0, 0, 0, 0.6);
+  transform: translateX(calc(var(--i) * 100%)); transition: transform var(--dur-3) var(--ease-spring); }
+.seg__item { position: relative; z-index: 1; min-height: 36px; padding: 0 18px; border: 0; background: none; border-radius: var(--r-pill); color: var(--dust); font-size: var(--t-sm); white-space: nowrap; transition: color var(--dur-2); }
+.seg__item[aria-selected='true'], .seg__item[aria-pressed='true'] { color: var(--bone); }
+
+/* ========== 标签 / 指示灯 / 读数槽 ========== */
+.tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--r-pill); font-size: var(--t-xs); color: var(--dust); border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); line-height: 1.7; }
+.tag--gold { color: var(--axiom-hi); border-color: rgba(232, 195, 106, 0.4); background: rgba(232, 195, 106, 0.08); }
+.tag--frost { color: var(--frost); border-color: rgba(141, 182, 255, 0.35); background: rgba(141, 182, 255, 0.07); }
+.tag--moss { color: var(--moss); border-color: rgba(127, 200, 160, 0.35); background: rgba(127, 200, 160, 0.07); }
+.tag--ember { color: var(--ember); border-color: rgba(224, 123, 74, 0.4); background: rgba(224, 123, 74, 0.08); }
+.led { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ash); box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5); vertical-align: middle; }
+.led--on { background: var(--moss); box-shadow: 0 0 10px 1px rgba(127, 200, 160, 0.8); }
+.led--warn { background: var(--axiom); box-shadow: 0 0 10px 1px rgba(232, 195, 106, 0.8); }
+
+.readout { padding: 14px 18px; border-radius: var(--r-md); background: linear-gradient(180deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.25)); box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.07); }
+.readout__v { font-family: var(--font-display); font-size: var(--t-2xl); line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--axiom-hi); text-shadow: 0 0 22px rgba(232, 195, 106, 0.4); }
+.readout__k { margin-top: 4px; color: var(--dust); font-size: var(--t-sm); }
+
+/* 分隔线：中间一点金光，像地平线 */
+.horizon { height: 1px; border: 0; background: linear-gradient(90deg, transparent, var(--line-2) 20%, rgba(232, 195, 106, 0.55) 50%, var(--line-2) 80%, transparent); }
+
+/* 触屏：关闭 hover 位移，避免粘滞 */
+@media (hover: none) {
+  .glass--interactive:hover { transform: none; }
+  .knob:hover .knob__cap { --cap-y: -4px; filter: none; }
+}

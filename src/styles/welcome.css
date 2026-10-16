@@ -1,0 +1,17 @@
+.welcome { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: clamp(48px, 10vh, 120px) var(--gutter) clamp(36px, 7vh, 80px); text-align: center; }
+.welcome__top { max-width: 900px; }
+.welcome__title { font-size: clamp(2.3rem, 1rem + 5.2vw, 5rem); letter-spacing: 0.18em; line-height: 1.2; font-weight: 500; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.8), 0 0 60px rgba(232, 195, 106, 0.12); padding-left: 0.18em; }
+.welcome__char { display: inline-block; animation: char-in 1.5s var(--ease-out) var(--d) both; }
+@keyframes char-in { from { opacity: 0; transform: translateY(0.35em) scale(1.06); filter: blur(14px); } to { opacity: 1; transform: none; filter: blur(0); } }
+.welcome__sub { margin: 22px auto 0; max-width: 34em; color: var(--bone-2); font-size: clamp(0.95rem, 0.88rem + 0.3vw, 1.1rem); line-height: 1.9; text-shadow: 0 1px 18px rgba(0, 0, 0, 0.9); animation: fade-in 1.6s var(--ease-out) 1.3s both; }
+.welcome__bottom { display: flex; flex-direction: column; align-items: center; gap: 16px; animation: fade-in 1.4s var(--ease-out) 1.7s both; }
+.welcome__hint { color: var(--dust); font-size: var(--t-xs); }
+.welcome__vertical { position: absolute; left: clamp(18px, 4vw, 64px); top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; display: flex; flex-direction: row-reverse; gap: 1.5em; font-size: clamp(0.95rem, 0.85rem + 0.4vw, 1.2rem); letter-spacing: 0.5em; white-space: nowrap; height: max-content; color: var(--dust); animation: fade-in 2.4s var(--ease-out) 2s both; text-shadow: 0 0 18px rgba(0, 0, 0, 0.9); }
+@media (max-width: 760px) { .welcome__vertical { display: none; } .welcome__title { letter-spacing: 0.1em; } }
+
+/* 进入仪式：文字沉入虚空（黑洞的移动由天空层完成） */
+.welcome.is-leaving .welcome__top, .welcome.is-leaving .welcome__vertical { animation: sink 900ms var(--ease-inout) forwards; }
+.welcome.is-leaving .welcome__bottom { animation: sink 700ms var(--ease-inout) forwards; }
+.welcome.is-leaving { pointer-events: none; }
+@keyframes sink { to { opacity: 0; transform: scale(0.94) translateY(10px); filter: blur(14px); } }
+.welcome.is-leaving .welcome__vertical { transform: translateY(-50%); }

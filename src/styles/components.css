@@ -957,8 +957,9 @@
   padding: var(--sp-2) 0 var(--sp-3);
 }
 
-/* 桌面端隐藏移动目录；窄屏隐藏侧栏目录 */
-@media (min-width: 768px) {
+/* ≥1024px 用右侧栏目录；<1024px（含平板）用折叠目录。
+   原先以 768px 为界，导致 768–1023px 两种目录都被隐藏。 */
+@media (min-width: 1024px) {
   .doc-toc-mobile {
     display: none;
   }
@@ -968,8 +969,19 @@
   .doc-toc-desktop {
     display: none;
   }
+  /* 折叠目录作为 flex 子项原本排在正文右侧，挤窄正文；
+     窄屏改为纵向排列，目录在正文上方、占满整行。 */
   .reading-layout {
-    justify-content: flex-start;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .doc-toc-mobile {
+    order: -1;
+  }
+  .reading-main {
+    flex: 0 1 auto;
+    max-width: 100%;
   }
 }
 

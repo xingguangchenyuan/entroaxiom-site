@@ -1,7 +1,9 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeSlug from 'rehype-slug';
+import rehypeKatex from 'rehype-katex';
 import { copy } from '../../config/site';
 import { Lightbox } from './Lightbox';
 
@@ -13,7 +15,7 @@ export interface Heading {
 
 interface Props {
   body: string;
-  /** 渲染完成后回传标题（来自 rehype-slug 的 id），供 Toc 使用 */
+  /** 渲染完成后回传标题（来自 rehype-slug 的 id），供目录使用 */
   onHeadings?: (headings: Heading[]) => void;
 }
 
@@ -23,46 +25,22 @@ function ImageNode({ src, alt }: { src?: string; alt?: string }) {
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [zoom, setZoom] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
-
   const actualSrc = retryNonce > 0 ? `${src}?retry=${retryNonce}` : src;
 
   return (
     <>
-      <span className="reading-image-wrap">
+      <span className={`md-img${state === 'loading' ? ' is-loading' : ''}`}>
         {state !== 'error' && (
-          <button
-            type="button"
-            className="reading-image-button"
-            aria-label={copy.zoomAlt}
-            onClick={() => actualSrc && setZoom(actualSrc)}
-          >
-            <img
-              src={actualSrc}
-              alt={alt ?? ''}
-              loading="lazy"
-              onLoad={() => setState('ready')}
-              onError={() => setState('error')}
-            />
+          <button type="button" className="md-img__btn" aria-label={copy.zoomAlt} onClick={() => actualSrc && setZoom(actualSrc)}>
+            <img src={actualSrc} alt={alt ?? ''} loading="lazy" onLoad={() => setState('ready')} onError={() => setState('error')} />
           </button>
         )}
         {state === 'error' && (
-          <span className="reading-image-fallback">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            >
-              <rect x="4" y="4" width="16" height="16" rx="2" />
-              <circle cx="9" cy="9" r="1.5" />
-              <path d="M4 17l5-5 4 4 3-3 4 4" />
-            </svg>
+          <span className="md-img__fallback">
             <span>{copy.imageFailed}</span>
             <button
               type="button"
-              className="reading-image-retry"
+              className="text-action"
               onClick={() => {
                 setRetryNonce((n) => n + 1);
                 setState('loading');
@@ -72,6 +50,7 @@ function ImageNode({ src, alt }: { src?: string; alt?: string }) {
             </button>
           </span>
         )}
+        {alt && state === 'ready' && <span className="md-img__cap">{alt}</span>}
       </span>
       {zoom && <Lightbox src={zoom} alt={alt ?? ''} onClose={() => setZoom(null)} />}
     </>
@@ -79,11 +58,19 @@ function ImageNode({ src, alt }: { src?: string; alt?: string }) {
 }
 
 /**
- * 正文渲染（设计文档 §11）
- * - remark-gfm：任务列表、表格、删除线；
- * - rehype-slug：标题锚点 id，供目录跳转；
- * - 图片可点击放大、失败显示占位 + 重试；宽表格包 .table-scroll（仅容器内横滚）。
+ * 正文渲染
+ *  - remark-gfm：任务列表、表格、删除线（singleTilde:false，单个 ~ 不当删除线，"4~16 KB" 这类范围写法不会被划掉）
+ *  - remark-math + rehype-katex：$行内$ 与 $$块级$$ 公式；写错的公式按原文显示，不会让整页崩溃
+ *  - rehype-slug：标题锚点 id，供目录跳转
+ *  - 图片可点击放大、失败显示占位 + 重试；宽表格包 .table-scroll（仅容器内横滚）
  */
+/** 标题纯文本：KaTeX 会附带一份 MathML（读屏用），取目录文字时要去掉，否则公式会出现两遍 */
+function headingText(el: HTMLElement): string {
+  const clone = el.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll('.katex-mathml').forEach((n) => n.remove());
+  return clone.textContent ?? '';
+}
+
 export function Markdown({ body, onHeadings }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -93,19 +80,16 @@ export function Markdown({ body, onHeadings }: Props) {
     if (!root) return;
     const heads: Heading[] = [];
     root.querySelectorAll<HTMLElement>('h2, h3').forEach((el) => {
-      const id = el.id;
-      if (id) {
-        heads.push({ id, text: el.textContent ?? '', level: el.tagName === 'H2' ? 2 : 3 });
-      }
+      if (el.id) heads.push({ id: el.id, text: headingText(el), level: el.tagName === 'H2' ? 2 : 3 });
     });
     onHeadings(heads);
   }, [body, onHeadings]);
 
   return (
-    <div className="reading" ref={rootRef}>
+    <div className="prose" ref={rootRef}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeSlug]}
+        remarkPlugins={[[remarkGfm, { singleTilde: false }], remarkMath]}
+        rehypePlugins={[rehypeSlug, [rehypeKatex, { strict: 'ignore', throwOnError: false }]]}
         components={{
           img: (props) => <ImageNode src={props.src} alt={props.alt} />,
           table: (props) => (

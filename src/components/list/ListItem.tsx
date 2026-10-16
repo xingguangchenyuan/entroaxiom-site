@@ -1,33 +1,38 @@
+import { Link } from 'react-router-dom';
 import { formatDate } from '../../lib/format';
+import { IconArrow } from '../ui/Icons';
 
 interface Props {
-  href: string;
+  to: string;
   title: string;
   summary?: string;
   category?: string;
+  tags?: string[];
   updated?: string;
   date?: string;
 }
 
-/**
- * 笔记/总结列表条目（设计文档 §8）
- * - 紧凑行条目：标题、摘要（最多两行省略）、分类、更新时间；
- * - 缺失字段不渲染；整行可点击。
- */
-export function ListItem({ href, title, summary, category, updated, date }: Props) {
+/** 笔记/总结列表条目：整行可点；摘要最多两行；缺失字段不渲染 */
+export function ListItem({ to, title, summary, category, tags, updated, date }: Props) {
   const dateText = formatDate(updated, date);
   return (
     <li>
-      <a className="list-item" href={href}>
-        <span className="list-item-title">{title}</span>
-        {summary && <span className="list-item-summary">{summary}</span>}
-        {(category || dateText) && (
-          <span className="list-item-meta">
-            {category && <span className="list-item-cat">{category}</span>}
-            {dateText && <time className="list-item-date">{dateText}</time>}
-          </span>
-        )}
-      </a>
+      <Link className="item lit" to={to}>
+        <span className="item__main">
+          <span className="item__title">{title}</span>
+          {summary && <span className="item__summary">{summary}</span>}
+          {(category || (tags && tags.length > 0)) && (
+            <span className="item__tags">
+              {category && <span className="tag tag--gold">{category}</span>}
+              {tags?.slice(0, 4).map((t) => <span key={t} className="tag">{t}</span>)}
+            </span>
+          )}
+        </span>
+        <span className="item__side">
+          {dateText && <time className="item__date">{dateText}</time>}
+          <IconArrow className="item__arrow" size={18} />
+        </span>
+      </Link>
     </li>
   );
 }

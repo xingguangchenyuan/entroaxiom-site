@@ -2,6 +2,9 @@
 
 export type Visibility = 'public' | 'private';
 
+/** 发布状态：与后端一致，访客只能看到 public 且 published 的内容 */
+export type Status = 'draft' | 'published';
+
 /** 文档 §9.2 frontmatter 规范 */
 export interface Frontmatter {
   /** 必填，URL 使用，kebab-case，全局唯一 */
@@ -18,8 +21,9 @@ export interface Frontmatter {
   date?: string;
   /** 可选，YYYY-MM-DD，列表优先展示 */
   updated?: string;
-  /** 可选，缺省视为 public；本阶段只加载 public，无任何 UI */
+  /** 与后端一致：只有 visibility=public 且 status=published 才会展示。缺省视为不展示 */
   visibility?: Visibility;
+  status?: Status;
 }
 
 /** 学习笔记：frontmatter + Markdown 正文 */

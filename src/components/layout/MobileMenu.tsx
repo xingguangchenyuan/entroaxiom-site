@@ -1,34 +1,30 @@
 import { useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { navItems } from '../../config/site';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { IconDrift, IconSearch } from '../ui/Icons';
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  onSearch: () => void;
+  onDrift: () => void;
 }
 
-/**
- * 移动端导航面板（设计文档 §6.4）
- * - 菜单按钮 aria-expanded / aria-controls 指向本面板；
- * - 打开时焦点进入面板（焦点陷阱），关闭后由 useFocusTrap 把焦点还给按钮；
- * - 点击导航项后收起。
- */
-export function MobileMenu({ open, onClose }: Props) {
+/** 移动端导航：从顶栏下方展开的玻璃面板；焦点陷阱 + Esc / 点击外部关闭 */
+export function MobileMenu({ open, onClose, onSearch, onDrift }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const { pathname } = useLocation();
   useFocusTrap(open, ref);
 
-  // Esc 关闭；点击面板外（菜单按钮除外）关闭（设计文档 §13.2）
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     const onPointer = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (ref.current && !ref.current.contains(target) && !(target as Element).closest?.('.menu-toggle')) {
-        onClose();
-      }
+      const t = e.target as Element;
+      if (ref.current && !ref.current.contains(t) && !t.closest?.('.menu-toggle')) onClose();
     };
     document.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', onPointer);
@@ -40,26 +36,28 @@ export function MobileMenu({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const classFor = ({ isActive }: { isActive: boolean }) =>
-    isActive ? 'mobile-link mobile-link-active' : 'mobile-link';
-
   return (
-    <div id="mobile-menu" className="mobile-menu" ref={ref}>
-      <ul className="mobile-menu-list">
-        {navItems.map((item) => (
-          <li key={item.to}>
-            <NavLink
-              to={item.to}
-              end={item.end}
-              onClick={onClose}
-              className={classFor}
-              role="menuitem"
-            >
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
+    <div id="mobile-menu" className="mobile-menu glass lit" ref={ref}>
+      <ul className="mobile-menu__list">
+        {navItems.map((item, i) => {
+          const active = item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`);
+          return (
+            <li key={item.to} style={{ ['--i' as string]: i }}>
+              <Link to={item.to} onClick={onClose} className="mobile-menu__link" aria-current={active ? 'page' : undefined}>
+                {item.label}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
+      <div className="mobile-menu__tools">
+        <button type="button" className="chip" onClick={() => { onClose(); onSearch(); }}>
+          <IconSearch size={15} /> 搜索
+        </button>
+        <button type="button" className="chip" onClick={() => { onClose(); onDrift(); }}>
+          <IconDrift size={15} /> 漂流
+        </button>
+      </div>
     </div>
   );
 }

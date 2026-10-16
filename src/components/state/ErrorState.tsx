@@ -1,19 +1,21 @@
 import { copy } from '../../config/site';
+import { Knob } from '../ui/Knob';
 
 interface Props {
-  /** 仅真实可重试时传入，否则不渲染（设计文档 §10：不放无作用按钮） */
+  /** 仅真实可重试时传入，否则不渲染按钮 */
   onRetry?: () => void;
+  message?: string;
 }
 
-/** 加载失败（设计文档 §10、§14.3） */
-export function ErrorState({ onRetry }: Props) {
+export function ErrorState({ onRetry, message }: Props) {
   return (
     <div className="state-error" role="alert">
-      <p className="state-text">{copy.loadFailed}</p>
+      <p className="state-title">{copy.loadFailed}</p>
+      {message && <p className="state-text">{message}</p>}
       {onRetry && (
-        <button type="button" className="state-action" onClick={onRetry}>
-          {copy.retry}
-        </button>
+        <div className="state-actions">
+          <Knob tone="dark" size="sm" onClick={onRetry}>{copy.retry}</Knob>
+        </div>
       )}
     </div>
   );

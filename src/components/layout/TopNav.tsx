@@ -1,57 +1,99 @@
-import { NavLink } from 'react-router-dom';
-import { SITE_NAME, copy, navItems } from '../../config/site';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { navItems, SITE_NAME, copy } from '../../config/site';
+import { useDrift } from '../../hooks/useDrift';
 import { AxiomMark } from './AxiomMark';
+import { MobileMenu } from './MobileMenu';
+import { usePalette } from './CommandPalette';
+import { IconDrift, IconMenu, IconClose, IconSearch } from '../ui/Icons';
 
-interface Props {
-  onNavigate: () => void;
-  menuOpen: boolean;
-  onToggleMenu: () => void;
-}
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
-function classFor({ isActive }: { isActive: boolean }): string {
-  return isActive ? 'nav-link nav-link-active' : 'nav-link';
+function isActive(pathname: string, to: string, end?: boolean): boolean {
+  if (end) return pathname === to;
+  return pathname === to || pathname.startsWith(`${to}/`);
 }
 
 /**
- * 顶部导航（设计文档 §6.4）
- * - position: fixed，滚动时保持可见；
- * - 当前项：accent 色 + 文字等宽 2px 短下划线 + aria-current（NavLink 自带）；
- * - 移动端折叠为菜单按钮，导航项收进 MobileMenu。
+ * 顶栏：悬浮的玻璃胶囊。
+ *  - 当前页的“光斑”在链接之间滑动（位置由实际元素测量，窗口变化时重算）
+ *  - 滚动后收紧；搜索（⌘K）与漂流是常驻的两个工具
  */
-export function TopNav({ onNavigate, menuOpen, onToggleMenu }: Props) {
-  return (
-    <header className="topnav">
-      <div className="topnav-inner">
-        <NavLink to="/" className="brand" onClick={onNavigate}>
-          <AxiomMark className="brand-mark" />
-          {SITE_NAME}
-        </NavLink>
+export function TopNav() {
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  const [condensed, setCondensed] = useState(false);
+  const linksRef = useRef<HTMLDivElement>(null);
+  const [glow, setGlow] = useState<{ x: number; w: number } | null>(null);
+  const palette = usePalette();
+  const drift = useDrift();
 
-        <nav className="topnav-desktop" aria-label={SITE_NAME}>
-          <ul className="topnav-list">
-            {navItems.map((item) => (
-              <li key={item.to}>
-                <NavLink to={item.to} end={item.end} onClick={onNavigate} className={classFor}>
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
+  useEffect(() => setOpen(false), [pathname]);
+
+  useEffect(() => {
+    const onScroll = () => setCondensed(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const root = linksRef.current;
+      if (!root) return;
+      const el = root.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!el) {
+        setGlow(null);
+        return;
+      }
+      setGlow({ x: el.offsetLeft, w: el.offsetWidth });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    // 字体加载完成后宽度会变
+    const fonts = (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts;
+    void fonts?.ready.then(measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [pathname]);
+
+  return (
+    <header className={`nav${condensed ? ' is-condensed' : ''}`}>
+      <div className="nav__bar glass glass--pill lit">
+        <Link to="/" className="nav__brand" aria-label={`${SITE_NAME} 首页`}>
+          <AxiomMark className="nav__mark" />
+          <span className="nav__name display">{SITE_NAME}</span>
+        </Link>
+
+        <nav className="nav__links" aria-label="主导航" ref={linksRef}>
+          {glow && <span className="nav__glow" style={{ transform: `translateX(${glow.x}px)`, width: glow.w }} aria-hidden="true" />}
+          {navItems.map((item) => (
+            <Link key={item.to} to={item.to} className="nav__link" aria-current={isActive(pathname, item.to, item.end) ? 'page' : undefined}>
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
-        <button
-          type="button"
-          className="menu-toggle"
-          aria-expanded={menuOpen}
-          aria-controls="mobile-menu"
-          aria-label={menuOpen ? copy.menu.close : copy.menu.open}
-          onClick={onToggleMenu}
-        >
-          <span className="menu-toggle-line" />
-          <span className="menu-toggle-line" />
-          <span className="menu-toggle-line" />
-        </button>
+        <div className="nav__tools">
+          <button type="button" className="nav__tool nav__search" onClick={palette.open} aria-label="搜索全站（快捷键 Ctrl K）">
+            <IconSearch size={17} />
+            <kbd className="nav__kbd">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+          </button>
+          <button type="button" className="nav__tool" onClick={drift} aria-label="漂流：随机去一篇内容" title="漂流">
+            <IconDrift size={18} />
+          </button>
+          <button
+            type="button"
+            className="nav__tool nav__menu-toggle menu-toggle"
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            aria-label={open ? copy.menu.close : copy.menu.open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <IconClose size={18} /> : <IconMenu size={18} />}
+          </button>
+        </div>
       </div>
+      <MobileMenu open={open} onClose={() => setOpen(false)} onSearch={palette.open} onDrift={drift} />
     </header>
   );
 }

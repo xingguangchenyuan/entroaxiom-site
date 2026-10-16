@@ -1,25 +1,18 @@
 interface Props {
   message: string;
+  hint?: string;
 }
 
-/** 空状态：无色块图标 + 文案，不引导上传（设计文档 §8、§10） */
-export function EmptyState({ message }: Props) {
+/** 空状态：一枚空轨道 + 文案。访客页面不出现“去上传”之类的引导 */
+export function EmptyState({ message, hint }: Props) {
   return (
     <div className="state-empty" role="status">
-      <svg
-        className="state-icon"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M4 7h12l3 3v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-        <path d="M16 10V7" />
+      <svg className="state-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true" stroke="currentColor" strokeWidth="1.3">
+        <circle cx="24" cy="24" r="16" strokeDasharray="2 5" />
+        <circle cx="24" cy="24" r="2.4" fill="currentColor" stroke="none" />
       </svg>
-      <p className="state-text">{message}</p>
+      <p className="state-title">{message}</p>
+      {hint && <p className="state-text">{hint}</p>}
     </div>
   );
 }
