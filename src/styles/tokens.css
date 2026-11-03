@@ -1,68 +1,103 @@
-/* 设计令牌：一处定义，全站引用 */
+/* ==========================================================================
+   设计令牌 · entroaxiom v3「星仪 Orrery」
+   深空为底，五颗天体各有其色：余烬橙 / 冰川青 / 星云紫 / 恒星金 / 极光绿，
+   再加一点玫瑰粉作为“视界”的点睛色。
+   ========================================================================== */
 :root {
-  /* 虚空：由深到浅 */
-  --void: #04050a;
-  --abyss: #080a12;
-  --slab: #0e111c;
-  --slab-2: #141828;
+  color-scheme: dark;
 
-  /* 纸色（正文）：不是纯白，带一点旧纸的暖 */
-  --bone: #ece6d8;
-  --bone-2: #cfc9bb;
-  --dust: #a19e96;   /* 对比度在 #04050a 上 ≥ 7:1 */
-  --ash: #6f6d68;    /* 仅用于装饰性文字，不承载信息 */
+  /* 深空 */
+  --void: #03040a;
+  --abyss: #070915;
+  --slab: #0d1020;
+  --slab-2: #141830;
+  --slab-3: #1c2140;
 
-  /* 公理金：吸积盘的颜色，只在“被点亮的东西”上使用 */
-  --axiom: #e8c36a;
-  --axiom-hi: #f7e1a0;
-  --axiom-lo: #b98a2e;
-  --axiom-ink: #1b1306;
+  /* 骨白（文字） */
+  --bone: #efe8da;
+  --bone-2: #cfc8ba;
+  --dust: #a19eab;
+  --ash: #8a8898; /* 对比度：在 void / 卡片 / slab-3 上分别 5.9 / 5.2 / 4.5，满足正文 4.5:1（原 #6f6d7c 只有 3.1–4.0） */
 
-  /* 冷光：星光与次要状态 */
-  --frost: #8db6ff;
-  --ember: #e07b4a;
-  --moss: #7fc8a0;
-  --rose: #e87a8c;
+  /* 五颗天体 */
+  --ember: #ef8456;
+  --ember-hi: #ffb08a;
+  --glacier: #9fd6e0;
+  --glacier-hi: #d4f3f7;
+  --nebula: #ab93ff;
+  --nebula-hi: #d6c9ff;
+  --sol: #e9bd5e;
+  --sol-hi: #f8e0a2;
+  --sol-lo: #b98a2e;
+  --sol-ink: #1b1306;
+  --aurora: #72e0b9;
+  --aurora-hi: #b6f5dd;
+  --rose: #f2a7c3;
+
+  /* 旧变量名兼容（部分保留组件还在用） */
+  --axiom: var(--sol);
+  --axiom-hi: var(--sol-hi);
+  --axiom-lo: var(--sol-lo);
+  --axiom-ink: var(--sol-ink);
+  --frost: var(--glacier);
+  --moss: var(--aurora);
+
+  /* 当前页面的主色：每个模块页把它换成自己的天体色 */
+  --hue: var(--sol);
+  --hue-hi: var(--sol-hi);
 
   /* 线与面 */
-  --line: rgba(236, 230, 216, 0.12);
-  --line-2: rgba(236, 230, 216, 0.22);
-  --glass-fill: linear-gradient(145deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.022) 55%, rgba(255, 255, 255, 0.05));
-  --glass-border: rgba(255, 255, 255, 0.13);
+  --line: rgba(239, 232, 218, 0.09);
+  --line-2: rgba(239, 232, 218, 0.17);
+  --line-3: rgba(239, 232, 218, 0.3);
+  --glass-fill: rgba(14, 16, 34, 0.58);
+  --glass-fill-2: rgba(20, 24, 48, 0.74);
+  --glass-border: rgba(239, 232, 218, 0.12);
 
-  /* 字体：展示字体按需子集化；正文走系统无衬线，保证小字号清晰 */
-  --font-display: 'Entro Serif', 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Segoe UI', sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  /* 字体 */
+  --font-display: 'Entro Serif', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', serif;
+  --font-latin: 'Cinzel', 'Trajan Pro', 'Times New Roman', serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
 
-  /* 字阶 */
-  --t-xs: 0.78rem;
+  /* 字号 */
+  --t-xs: 0.75rem;
   --t-sm: 0.875rem;
   --t-md: 1rem;
-  --t-lg: 1.18rem;
-  --t-xl: clamp(1.4rem, 1.2rem + 0.8vw, 1.85rem);
-  --t-2xl: clamp(1.9rem, 1.4rem + 2vw, 3rem);
-  --t-hero: clamp(2.5rem, 1.4rem + 4.6vw, 5.2rem);
+  --t-lg: 1.1875rem;
+  --t-xl: clamp(1.4rem, 1.1rem + 1vw, 1.8rem);
+  --t-2xl: clamp(1.8rem, 1.3rem + 1.8vw, 2.6rem);
+  --t-3xl: clamp(2.3rem, 1.5rem + 3vw, 3.8rem);
+  --t-hero: clamp(2.6rem, 1.4rem + 5vw, 5.8rem);
 
-  /* 圆角：按层级区分，而不是全站同一个 */
+  /* 圆角 */
   --r-sm: 10px;
   --r-md: 16px;
   --r-lg: 26px;
   --r-pill: 999px;
 
   /* 动效 */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-1: 160ms;
   --dur-2: 320ms;
   --dur-3: 640ms;
 
   /* 布局 */
-  --nav-h: 76px;
-  --gutter: clamp(18px, 4vw, 56px);
-  --maxw: 1180px;
+  --nav-h: 72px;
+  --maxw: 1200px;
   --readw: 720px;
+  --gutter: clamp(18px, 4vw, 56px);
 
-  --focus: 0 0 0 2px var(--void), 0 0 0 4px var(--axiom);
+  --focus: 0 0 0 2px var(--void), 0 0 0 4px var(--hue);
+  --shadow-deep: 0 30px 80px -30px rgba(0, 0, 0, 0.85);
 }
+
+/* 模块色：任意元素加 data-hue 即可切换局部主色 */
+[data-hue='ember'] { --hue: var(--ember); --hue-hi: var(--ember-hi); }
+[data-hue='glacier'] { --hue: var(--glacier); --hue-hi: var(--glacier-hi); }
+[data-hue='nebula'] { --hue: var(--nebula); --hue-hi: var(--nebula-hi); }
+[data-hue='sol'] { --hue: var(--sol); --hue-hi: var(--sol-hi); }
+[data-hue='aurora'] { --hue: var(--aurora); --hue-hi: var(--aurora-hi); }
+[data-hue='rose'] { --hue: var(--rose); --hue-hi: #ffd6e5; }

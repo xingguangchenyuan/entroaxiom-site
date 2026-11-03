@@ -3,13 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#04050a" />
-    <meta name="description" content="entroaxiom — 在无序的熵变中，确立世界的公理。学习笔记、文章总结与文件库，围绕一个黑洞公转。" />
+    <meta name="theme-color" content="#03040a" />
+    <meta name="description" content="entroaxiom — 在无序的熵变中，确立世界的公理。一座私人星仪：随笔、学习笔记、书影音、文件库与留言彗星。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="__SITE_URL__/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="entroaxiom — 在无序的熵变中，确立世界的公理" />
+    <meta property="og:site_name" content="entroaxiom" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content="entroaxiom" />
+    <meta property="og:description" content="在无序的熵变中，确立世界的公理。一座私人星仪：随笔、学习笔记、书影音、文件库与留言彗星。" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="__SITE_URL__/og-image.png" />
+    <meta name="twitter:image:alt" content="entroaxiom 星仪" />
+    <meta name="twitter:title" content="entroaxiom" />
+    <meta name="twitter:description" content="在无序的熵变中，确立世界的公理。一座私人星仪：随笔、学习笔记、书影音、文件库与留言彗星。" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- 首包字形（首屏标题用到的字）提前下载：不必等 CSS 解析、排版之后才发现需要它。其余汉字分片按 unicode-range 在用到时才下载 -->
+    <link rel="preload" href="/src/assets/fonts/entro-serif/entro-serif-base.woff2" as="font" type="font/woff2" crossorigin />
     <title>entroaxiom</title>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="margin:0;padding:48px 24px;color:#efe8da;background:#03040a;font:16px/1.7 system-ui,sans-serif;text-align:center">
+        entroaxiom 是一座需要 JavaScript 才能运行的星仪。请在浏览器里启用 JavaScript 后刷新页面。
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

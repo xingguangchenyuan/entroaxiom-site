@@ -1,10 +1,14 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeSlug from 'rehype-slug';
 import rehypeKatex from 'rehype-katex';
+// 只有这里会产生 .katex 标记，样式就近引入，跟着本块一起异步加载（约 8 KB gzip）
+import 'katex/dist/katex.min.css';
 import { copy } from '../../config/site';
+import { classifyHref, withRetryParam } from '../../lib/links';
 import { Lightbox } from './Lightbox';
 
 export interface Heading {
@@ -21,18 +25,50 @@ interface Props {
 
 const TABLE_LABEL = '表格，可横向滚动';
 
+/**
+ * 正文链接：
+ *  - 指向前端路由的站内链接走 <Link>（不整页刷新）；
+ *  - 外链在新窗口打开，并带 noopener noreferrer；
+ *  - 页内锚点（#xxx）、mailto:、静态文件（/uploads/…）等保持浏览器默认行为。
+ */
+function MdLink({ href, children }: { href?: string; children?: ReactNode }) {
+  const target = classifyHref(href, window.location.origin);
+  if (target.kind === 'internal') return <Link to={target.to}>{children}</Link>;
+  if (target.kind === 'external') {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  }
+  return <a href={href}>{children}</a>;
+}
+
 function ImageNode({ src, alt }: { src?: string; alt?: string }) {
+  // 正文里还留着 `asset:<id>`：那是后台编辑器对私密文件的内部引用，
+  // 公开接口正常应该已经换成 /uploads/public/... 或去掉；真漏到前台时直接显示“未公开”，
+  // 不要拿它去请求（必然 404），也不要给“重试”—— 重试一百次也不会变。
+  const isInternalRef = !!src && src.startsWith('asset:');
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [zoom, setZoom] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
-  const actualSrc = retryNonce > 0 ? `${src}?retry=${retryNonce}` : src;
+  // 地址里已有查询串时用 & 追加，不会拼出「?a=1?retry=1」
+  const actualSrc = src ? withRetryParam(src, retryNonce) : src;
+
+  if (isInternalRef) {
+    return (
+      <span className="md-img__fallback">
+        <span>{copy.imagePrivate}</span>
+      </span>
+    );
+  }
 
   return (
     <>
       <span className={`md-img${state === 'loading' ? ' is-loading' : ''}`}>
         {state !== 'error' && (
           <button type="button" className="md-img__btn" aria-label={copy.zoomAlt} onClick={() => actualSrc && setZoom(actualSrc)}>
-            <img src={actualSrc} alt={alt ?? ''} loading="lazy" onLoad={() => setState('ready')} onError={() => setState('error')} />
+            <img src={actualSrc} alt={alt ?? ''} loading="lazy" decoding="async" onLoad={() => setState('ready')} onError={() => setState('error')} />
           </button>
         )}
         {state === 'error' && (
@@ -92,6 +128,7 @@ export function Markdown({ body, onHeadings }: Props) {
         rehypePlugins={[rehypeSlug, [rehypeKatex, { strict: 'ignore', throwOnError: false }]]}
         components={{
           img: (props) => <ImageNode src={props.src} alt={props.alt} />,
+          a: ({ href, children }) => <MdLink href={href}>{children}</MdLink>,
           table: (props) => (
             <div className="table-scroll" tabIndex={0} role="region" aria-label={TABLE_LABEL}>
               <table>{props.children}</table>

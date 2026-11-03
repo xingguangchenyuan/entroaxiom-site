@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getFile } from '../content/loader';
+import { getFile, peekFile } from '../content/loader';
 import type { FileItem } from '../content/types';
 import { copy } from '../config/site';
 import { useAsync } from '../hooks/useAsync';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { RESTORE_SCROLL } from '../hooks/useScrollRestore';
 import { formatBytes, kindLabel } from '../lib/format';
-import { FileGlyph } from '../components/list/FileRow';
+import { FileGlyph } from '../components/files/FileGlyph';
 import { Lightbox } from '../components/reading/Lightbox';
 import { DemoBadge } from '../components/list/DemoBadge';
 import { ErrorState } from '../components/state/ErrorState';
@@ -18,7 +19,9 @@ import { IconBack, IconDownload } from '../components/ui/Icons';
 function FilePreview({ file }: { file: FileItem }) {
   const [zoom, setZoom] = useState(false);
   const [broken, setBroken] = useState(false);
-  if (!file.src) return null;
+  // 没有可用公开地址：通常是文件仍是私密，或后台漏把 asset: 引用换成公开 URL。
+  // 明确说“未公开”，而不是静默渲染空白。
+  if (!file.src) return <p className="file-note">{copy.imagePrivate}</p>;
 
   if (file.kind === 'image') {
     return broken ? (
@@ -46,20 +49,20 @@ function FilePreview({ file }: { file: FileItem }) {
 
 export function FileDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const state = useAsync<FileItem | undefined>(() => (id ? getFile(id) : Promise.resolve(undefined)), [id]);
+  const state = useAsync<FileItem | undefined>(() => (id ? getFile(id) : Promise.resolve(undefined)), [id], () => (id ? peekFile(id) : undefined));
   const file = state.status === 'ready' ? state.data : undefined;
-  useDocumentTitle(file?.name);
+  useDocumentTitle(file?.name, file?.description);
 
   if (state.status === 'error') {
     return (
-      <main id="main" className="page page--read" tabIndex={-1}>
+      <main id="main" className="page page--read" tabIndex={-1} data-hue="sol">
         <ErrorState onRetry={state.retry} />
       </main>
     );
   }
   if (state.status === 'loading') {
     return (
-      <main id="main" className="page page--read" tabIndex={-1} aria-busy="true">
+      <main id="main" className="page page--read" tabIndex={-1} data-hue="sol" aria-busy="true">
         <div className="skeleton skeleton--title" />
         <div className="skeleton skeleton--body" />
       </main>
@@ -67,7 +70,7 @@ export function FileDetailPage() {
   }
   if (!file) {
     return (
-      <main id="main" className="page page--read" tabIndex={-1}>
+      <main id="main" className="page page--read" tabIndex={-1} data-hue="sol">
         <NotFoundState title={copy.contentMissing} desc={copy.contentMissingDesc} />
       </main>
     );
@@ -80,9 +83,9 @@ export function FileDetailPage() {
   ];
 
   return (
-    <main id="main" className="page page--read" tabIndex={-1}>
-      <Link to="/files" className="text-action article__back">
-        <IconBack size={15} /> {copy.backToList}
+    <main id="main" className="page page--read" tabIndex={-1} data-hue="sol">
+      <Link to="/files" state={RESTORE_SCROLL} className="text-action article__back">
+        <IconBack size={15} /> {copy.backToList} · 文件库
       </Link>
       <header className="file-head">
         <FileGlyph kind={file.kind} ext={file.ext} />

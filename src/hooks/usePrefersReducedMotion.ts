@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-/** prefers-reduced-motion（设计文档 §3 动画降级） */
+/** prefers-reduced-motion（动画降级） */
 export function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState<boolean>(() =>
     typeof window !== 'undefined'

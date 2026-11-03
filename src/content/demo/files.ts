@@ -1,7 +1,7 @@
 import type { FileItem } from '../types';
 
 /**
- * 演示文件清单（设计文档 §9.5）
+ * 演示文件清单
  * 只读 project 内 public/demo-assets/ 下的本地资源（src 字段），
  * 供演示模式预览/下载。正式模式不会加载本文件。
  */

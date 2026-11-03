@@ -1,5 +1,5 @@
 /**
- * Frontmatter 解析器（设计文档 §9.3）
+ * Frontmatter 解析器
  * 自写实现：切出首尾 `---` 之间的块，逐行按 `key: value` 解析，
  * 支持字符串、`[a, b]` 数组与日期字符串。选择不引入 gray-matter
  * （依赖 Node Buffer，浏览器端需要 polyfill）与 front-matter（无类型）。

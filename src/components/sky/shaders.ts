@@ -26,6 +26,7 @@ uniform float uNeb;     // 星云强度
 uniform vec2  uPar;     // 视差，-1..1
 uniform float uFlash;   // 金色闪光（进入时）
 uniform float uDim;     // 整体亮度
+uniform vec3  uTint;    // 当前所在天体的星云色调
 
 #define PI 3.14159265
 
@@ -99,9 +100,16 @@ void main() {
 
   vec3 col = starfield(src * 1.1 + par + vec2(2.3, 5.1), uTime);
 
+  /* ---- 多色星云：靛蓝底 + 品红/青绿两条“星际尘埃带” + 当前天体的色调 ---- */
   float n1 = fbm(src * 1.25 + vec2(uTime * 0.004, 0.0) + par * 2.0);
   float n2 = fbm(src * 3.2 + 7.3);
+  float n3 = fbm(src * 0.8 + vec2(-4.1, 2.7) - vec2(0.0, uTime * 0.003));
   vec3 neb = mix(vec3(0.015, 0.025, 0.085), vec3(0.11, 0.07, 0.17), n1) * smoothstep(0.32, 0.85, n1) * (0.55 + n2);
+  // 一条斜穿画面的银河带，颜色沿带缓慢漂移
+  float band = exp(-pow((src.y + src.x * 0.42 - 0.18) / 0.34, 2.0));
+  vec3 bandCol = mix(vec3(0.16, 0.05, 0.2), vec3(0.03, 0.15, 0.16), smoothstep(0.3, 0.75, n3));
+  neb += bandCol * band * smoothstep(0.35, 0.8, n1 + n3 * 0.4) * 0.9;
+  neb += uTint * smoothstep(0.42, 0.9, n3) * (0.6 + n2) * 0.95;
   neb += vec3(0.2, 0.13, 0.04) * smoothstep(0.58, 0.92, n2) * 0.06;
   col += neb * uNeb;
 

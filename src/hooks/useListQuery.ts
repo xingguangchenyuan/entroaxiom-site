@@ -2,7 +2,8 @@ import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 export const ALL = '全部';
-export type SortKey = 'recent' | 'title';
+export type SortKey = 'recent' | 'title' | 'size' | 'rating';
+const SORTS: SortKey[] = ['recent', 'title', 'size', 'rating'];
 
 interface ListQuery {
   /** 关键词（已去首尾空格），空串表示未搜索 */
@@ -29,7 +30,7 @@ export function useListQuery(): ListQuery {
 
   const query = useMemo(() => (searchParams.get('q') ?? '').trim(), [searchParams]);
   const category = useMemo(() => searchParams.get('cat') ?? ALL, [searchParams]);
-  const sort = useMemo<SortKey>(() => (searchParams.get('sort') === 'title' ? 'title' : 'recent'), [searchParams]);
+  const sort = useMemo<SortKey>(() => (SORTS.find((s) => s === searchParams.get('sort')) ?? 'recent'), [searchParams]);
 
   const commit = useCallback(
     (next: { q?: string; cat?: string; sort?: SortKey }) => {

@@ -1,4 +1,4 @@
-/** 管理端写入成功后，让所有公开内容消费者同步丢弃旧索引。 */
+/** 内容失效通知：「重试」按钮会调用 invalidateContent()，让请求缓存和全站语料一并丢弃、重新加载。 */
 let version = 0;
 const listeners = new Set<() => void>();
 

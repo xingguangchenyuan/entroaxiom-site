@@ -50,4 +50,12 @@ export const IconEdit = (p: IconProps) => base(<path d="M4 20h4L19 9l-4-4L4 16zM
 export const IconCheck = (p: IconProps) => base(<path d="m5 12.5 4.5 4.5L19 7.5" />, p);
 export const IconExternal = (p: IconProps) => base(<path d="M14 4h6v6m0-6-9 9M18 14v6H4V6h6" />, p);
 export const IconCommand = (p: IconProps) => base(<path d="M9 9V6.5A2.5 2.5 0 1 0 6.5 9H9Zm0 0h6m-6 0v6m6-6V6.5A2.5 2.5 0 1 1 17.5 9H15Zm0 0v6m0 0h2.5a2.5 2.5 0 1 1-2.5 2.5V15Zm0 0H9m0 0v2.5A2.5 2.5 0 1 1 6.5 15H9Z" />, p);
+export const IconFeather = (p: IconProps) => base(<path d="M20 4c-6 0-12 4-13 13l-2 3m2-3h6c4-1 6-5 7-13M9 13h6" />, p);
+export const IconBook = (p: IconProps) => base(<path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5zM12 6v13.5" />, p);
+export const IconFilm = (p: IconProps) => base(<><rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="M3.5 9h3m11 0h3m-17 6h3m11 0h3M7.5 5v14m9-14v14" /></>, p);
+export const IconDisc = (p: IconProps) => base(<><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="2.2" /><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5" /></>, p);
+export const IconComet = (p: IconProps) => base(<><circle cx="16.5" cy="7.5" r="3" /><path d="M14.4 9.6 4 20m8.2-12.6L5 12m11.8 2.6L12 19" /></>, p);
+export const IconStar = (p: IconProps) => base(<path d="m12 3.5 2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.8l6-.7z" />, p);
+export const IconSend = (p: IconProps) => base(<path d="M4 12 20 4l-6 16-3-7zM11 13l9-9" />, p);
+export const IconShuffle = (p: IconProps) => base(<path d="M4 7h3c5 0 5 10 10 10h3m-3-13 3 3-3 3M4 17h3c1.5 0 2.5-.8 3.3-2m3.4-6c.8-1.2 1.8-2 3.3-2h3m-3 13 3-3-3-3" />, p);
 export const IconSpark = (p: IconProps) => base(<path d="M12 3v5m0 8v5M3 12h5m8 0h5M6.5 6.5l3 3m5 5 3 3m0-11-3 3m-5 5-3 3" />, p);

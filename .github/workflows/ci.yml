@@ -1,0 +1,23 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # package.json 新增了 ESLint / Prettier / Vitest：首次需在本地 `npm install` 更新 package-lock.json 并提交，否则 npm ci 会因锁文件不一致失败
+      - run: npm ci
+      # 首次接入 lint：还没在真实环境跑过，先不阻塞流水线；清理完告警后删掉 continue-on-error
+      - run: npm run lint
+        continue-on-error: true
+      # build 脚本 = tsc --noEmit（类型检查）+ vite build + 剔除 demo-assets
+      - run: npm run build
+      - run: npm test
+      # demo 构建也要能过（它走另一条编译分支）
+      - run: npm run build:demo

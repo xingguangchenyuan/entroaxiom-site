@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { copy } from '../../config/site';
+import { isImeComposing } from '../../lib/ime';
 import { IconClose, IconSearch } from '../ui/Icons';
 
 interface Props {
@@ -49,6 +50,8 @@ export function SearchBox({ label, placeholder, currentQuery, onSubmit }: Props)
           schedule((e.target as HTMLInputElement).value);
         }}
         onKeyDown={(e) => {
+          // 组合输入中的回车 / Esc 属于输入法（上屏或取消候选），不当作提交 / 清空
+          if (isImeComposing(e.nativeEvent)) return;
           if (e.key === 'Enter') {
             window.clearTimeout(timer.current);
             onSubmit(draft.trim());

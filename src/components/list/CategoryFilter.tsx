@@ -1,20 +1,23 @@
+import { ALL } from '../../hooks/useListQuery';
+
 interface Props {
-  /** 全部 + 从内容自动汇总的分类 */
   categories: string[];
+  counts: Record<string, number>;
   active: string;
-  onSelect: (cat: string) => void;
-  counts?: Record<string, number>;
+  onSelect: (c: string) => void;
   label?: string;
 }
 
-/** 分类筛选：可按压的 chip，单选，带 aria-pressed；取值集合由现有内容汇总，不预置 */
-export function CategoryFilter({ categories, active, onSelect, counts, label = '按分类筛选' }: Props) {
+/** 分类筛选：一排可按下的星芯标签 */
+export function CategoryFilter({ categories, counts, active, onSelect, label = '按分类筛选' }: Props) {
+  if (categories.length === 0) return null;
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
   return (
     <div className="filter-row" role="group" aria-label={label}>
-      {categories.map((cat) => (
-        <button key={cat} type="button" className="chip" aria-pressed={cat === active} onClick={() => onSelect(cat)}>
-          {cat}
-          {counts && counts[cat] !== undefined && <span className="chip__n">{counts[cat]}</span>}
+      {[ALL, ...categories].map((c) => (
+        <button key={c} type="button" className="chip" aria-pressed={active === c} onClick={() => onSelect(c)}>
+          {c}
+          <span className="chip__n">{c === ALL ? total : counts[c] ?? 0}</span>
         </button>
       ))}
     </div>

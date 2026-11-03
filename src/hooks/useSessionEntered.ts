@@ -11,7 +11,7 @@ function readEntered(): boolean {
 }
 
 /**
- * 欢迎层开关（设计文档 §6.1）
+ * 欢迎层开关
  * - 同一会话内只播一次：点击「进入网站」写入 sessionStorage；
  * - 深链接（/notes、/files/xxx 等）在应用挂载时立即写入，之后回首页不补播；
  * - 返回 true 表示本会话已进入过，欢迎层不再显示。

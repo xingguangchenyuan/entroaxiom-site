@@ -30,6 +30,21 @@ export function pulseSky(): void {
   store.modeListeners.forEach((fn) => fn());
 }
 
+/* 星云色调：随所在模块变化（随笔偏余烬橙、笔记偏冰青……） */
+const DEFAULT_TINT: [number, number, number] = [0.09, 0.05, 0.16];
+let tint: [number, number, number] = DEFAULT_TINT;
+
+export function setSkyTint(next?: [number, number, number]): void {
+  const t = next ?? DEFAULT_TINT;
+  if (t[0] === tint[0] && t[1] === tint[1] && t[2] === tint[2]) return;
+  tint = t;
+  store.modeListeners.forEach((fn) => fn());
+}
+
+export function getSkyTint(): [number, number, number] {
+  return tint;
+}
+
 export function getPulseAt(): number {
   return store.pulseAt;
 }

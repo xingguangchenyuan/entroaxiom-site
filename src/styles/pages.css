@@ -1,18 +1,114 @@
-/* ========== 公理页 ========== */
-.axioms { max-width: 920px; }
-.axioms__preface { display: grid; gap: 1.2em; margin-bottom: 44px; max-width: 40rem; font-size: var(--t-lg); line-height: 2.1; color: var(--bone-2); }
-.axioms__preface p:first-child { font-family: var(--font-display); color: var(--bone); font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem); letter-spacing: 0.04em; }
-.axioms__list { display: grid; gap: 18px; margin: 44px 0; }
-.ax { display: grid; grid-template-columns: 110px 1fr; gap: 20px; align-items: center; padding: clamp(22px, 3.4vw, 40px) clamp(20px, 3.4vw, 44px); }
-.ax__num { font-size: 5.6rem; line-height: 1; text-align: center; color: transparent; -webkit-text-stroke: 1px rgba(232, 195, 106, 0.5); user-select: none; }
-.ax__title { font-size: var(--t-xl); letter-spacing: 0.06em; font-weight: 500; margin-bottom: 8px; }
-.ax__body p { color: var(--dust); line-height: 2; margin-bottom: 12px; max-width: 46ch; }
-@media (max-width: 640px) { .ax { grid-template-columns: 1fr; } .ax__num { text-align: left; font-size: 3.6rem; } }
-.horizon-note { padding: clamp(24px, 4vw, 44px); display: grid; gap: 12px; }
-.horizon-note h2 { font-size: var(--t-xl); letter-spacing: 0.1em; font-weight: 500; }
-.horizon-note p { color: var(--bone-2); line-height: 2; max-width: 46ch; }
-.horizon-note__n { color: var(--axiom-hi) !important; font-size: var(--t-sm); }
-.axioms__closing { margin: 56px 0 24px; text-align: center; color: var(--bone-2); font-size: var(--t-xl); letter-spacing: 0.14em; }
-.axioms__cta { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
-.state-icon--lg { width: 64px; height: 64px; }
-.state-actions { margin-top: 10px; }
+/* =========================================================
+   公理：七张塔罗牌（3D 翻转）
+   ========================================================= */
+
+.axioms__head { text-align: center; max-width: 680px; margin: 12px auto 40px; }
+.axioms__head .latin { color: var(--sol); font-size: var(--t-xs); margin: 0 0 10px; }
+.axioms__title {
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  margin: 0 0 16px;
+  background: linear-gradient(180deg, var(--sol-hi), var(--sol-lo));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.axioms__p { color: var(--bone-2); margin: 6px 0; font-family: var(--font-display); }
+
+.tarot-spread {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 22px;
+  max-width: 1180px;
+}
+.tarot-slot {
+  perspective: 1200px;
+  animation: deal 0.8s var(--ease-out) both;
+  animation-delay: calc(var(--i) * 90ms);
+}
+@keyframes deal {
+  from { opacity: 0; transform: translateY(40px) rotate(calc((var(--i) - 3) * 3deg)); }
+}
+.tarot {
+  position: relative;
+  aspect-ratio: 5 / 8.4;
+  transform-style: preserve-3d;
+  transition: transform 0.9s var(--ease-spring);
+}
+.tarot.is-flipped { transform: rotateY(180deg); }
+.tarot-slot:hover .tarot:not(.is-flipped) { transform: translateY(-8px) rotateY(-8deg); }
+.tarot__face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  color: var(--bone);
+  font: inherit;
+  text-align: center;
+}
+.tarot__front {
+  cursor: pointer;
+  justify-content: space-between;
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--c) 22%, transparent), transparent 55%),
+    repeating-radial-gradient(circle at 50% 45%, transparent 0 14px, color-mix(in srgb, var(--c) 7%, transparent) 14px 15px),
+    linear-gradient(180deg, #0c0b14, #05050a);
+  box-shadow: inset 0 0 0 6px #05050a, inset 0 0 0 7px color-mix(in srgb, var(--c) 35%, transparent), 0 24px 50px -30px var(--c);
+}
+.tarot__front:focus-visible { outline: 2px solid var(--c); outline-offset: 4px; }
+.tarot__glyph { width: 62%; color: var(--c); filter: drop-shadow(0 0 10px var(--c)); transition: transform 1.2s var(--ease-out); }
+.tarot-slot:hover .tarot__glyph { transform: rotate(14deg) scale(1.05); }
+.tarot__num { font-size: 1.3rem; color: var(--c); letter-spacing: 0.3em; }
+.tarot__arcana { font-size: 12px; color: var(--bone-2); letter-spacing: 0.25em; }
+.tarot__back {
+  transform: rotateY(180deg);
+  justify-content: flex-start;
+  gap: 10px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--c) 18%, transparent), transparent 70%),
+    linear-gradient(180deg, #0e0d16, #07070c);
+  box-shadow: inset 0 0 0 6px #07070c, inset 0 0 0 7px color-mix(in srgb, var(--c) 35%, transparent);
+  overflow: auto;
+}
+.tarot__title { font-size: 1.3rem; margin: 4px 0 0; color: #fff; line-height: 1.35; }
+.tarot__body { font-size: var(--t-sm); color: var(--bone-2); line-height: 1.8; margin: 0; }
+.tarot__gloss { font-size: var(--t-xs); color: var(--c); margin: 0; font-family: var(--font-display); }
+.tarot__foot { margin-top: auto; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; font-size: var(--t-sm); }
+.tarot__reflip { color: var(--dust); }
+
+.axioms__eighth {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.axioms__eighth h2 { margin: 0 0 8px; }
+.axioms__eighth p { color: var(--dust); margin: 0 0 6px; }
+.axioms__eighth-card {
+  flex: none;
+  width: 92px;
+  aspect-ratio: 5 / 8;
+  border-radius: 12px;
+  border: 1px dashed var(--line-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--dust);
+  background: repeating-linear-gradient(45deg, transparent 0 8px, rgba(255, 255, 255, 0.03) 8px 9px);
+  animation: hover-float 6s ease-in-out infinite;
+}
+.axioms__eighth-q { font-size: 2rem; color: var(--glacier-hi); }
+@keyframes hover-float { 50% { transform: translateY(-8px) rotate(2deg); } }
+.axioms__closing { text-align: center; font-size: clamp(1.3rem, 2.6vw, 1.8rem); margin: 56px 0 22px; color: var(--sol-hi); }
+.axioms__cta { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }

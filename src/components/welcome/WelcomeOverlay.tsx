@@ -1,37 +1,48 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { welcomeCopy } from '../../config/site';
+import * as Dialog from '@radix-ui/react-dialog';
+import { welcomeCopy, SITE_NAME } from '../../config/site';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { Armillary } from './Armillary';
 import { pulseSky, setSkyMode, useSkyMode } from '../sky/skyStore';
-import { Knob } from '../ui/Knob';
 
 interface Props {
+  /** 点「进入视界」/Enter/Esc 时立刻调用：首页在欢迎层淡出的同时于底下浮现（交叉溶解） */
   onEnter: () => void;
+  /** 淡出动画播完、欢迎层该卸载时调用 */
+  onExited?: () => void;
 }
 
 /** 离场动画时长：与 welcome.css 中 .welcome.is-leaving 的时长保持一致 */
-const LEAVE_MS = 1400;
+/** 离场总时长：欢迎层淡去 0.55s → 首页延迟 0.5s 接力浮现 0.6s，约 1.15s 后卸载 */
+const FADE_MS = 1150;
 
 /**
- * 欢迎页：黑洞居中，标题一字一字浮现。
- * 进入时的“仪式”：金光一闪 → 黑洞滑向首页的位置（由天空层完成）→ 文字沉入虚空 → 首页浮现。
+ * 欢迎页：一台三维浑天仪悬在星海中央（见 Armillary.tsx）。
+ * 仪器在右侧绕倾斜轴自转，文案退到左侧，像展签一样贴着仪器。
  */
-export function WelcomeOverlay({ onEnter }: Props) {
+export function WelcomeOverlay({ onEnter, onExited }: Props) {
   useSkyMode('welcome');
   const reduced = usePrefersReducedMotion();
   const [leaving, setLeaving] = useState(false);
   const leavingRef = useRef(false);
-  const btnRef = useRef<HTMLButtonElement | null>(null);
-
+  const exitTimer = useRef(0);
   const begin = useCallback(() => {
     if (leavingRef.current) return;
     leavingRef.current = true;
     setLeaving(true);
     pulseSky();
     setSkyMode('home');
-    window.setTimeout(onEnter, reduced ? 0 : LEAVE_MS);
-  }, [onEnter, reduced]);
+    // 首页立刻在欢迎层底下就位：淡出与浮现同时进行，交叉溶解而不是先消失再跳变
+    onEnter();
+    if (reduced) {
+      onExited?.();
+      return;
+    }
+    exitTimer.current = window.setTimeout(() => onExited?.(), FADE_MS);
+  }, [onEnter, onExited, reduced]);
 
-  // 在页面任意位置按 Enter 即可进入（焦点在按钮上时由按钮自己处理，避免重复触发）
+  useEffect(() => () => window.clearTimeout(exitTimer.current), []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Enter' || e.repeat) return;
@@ -43,40 +54,46 @@ export function WelcomeOverlay({ onEnter }: Props) {
     return () => document.removeEventListener('keydown', onKey);
   }, [begin]);
 
-  useEffect(() => {
-    const id = window.setTimeout(() => btnRef.current?.focus({ preventScroll: true }), reduced ? 0 : 1600);
-    return () => window.clearTimeout(id);
-  }, [reduced]);
-
   const chars = Array.from(welcomeCopy.title);
 
   return (
-    <div className={`welcome${leaving ? ' is-leaving' : ''}`} role="dialog" aria-modal="true" aria-labelledby="welcome-title">
-      <div className="welcome__vertical display" aria-hidden="true">
-        {welcomeCopy.lines.map((l) => (
-          <span key={l}>{l}</span>
-        ))}
+    <Dialog.Root
+      open
+      onOpenChange={(next) => {
+        // Esc 也走同一套离场流程，而不是把模态直接卸掉
+        if (!next) begin();
+      }}
+    >
+      <Dialog.Portal>
+        <Dialog.Content asChild onInteractOutside={(e) => e.preventDefault()}>
+          <div className={`welcome${leaving ? ' is-leaving' : ''}`}>
+      <div className="welcome__sphere">
+        <Armillary />
       </div>
 
-      <div className="welcome__top">
-        <h1 id="welcome-title" className="welcome__title display" aria-label={welcomeCopy.title}>
-          {chars.map((c, i) => (
-            <span key={i} className="welcome__char" aria-hidden="true" style={{ ['--d' as string]: `${0.25 + i * 0.09}s` }}>
-              {c}
-            </span>
-          ))}
-        </h1>
-        <p className="welcome__sub">{welcomeCopy.sub}</p>
-      </div>
-
-      <div className="welcome__bottom">
-        <div className="welcome__enter" ref={(el: HTMLDivElement | null) => { btnRef.current = el?.querySelector('button') ?? null; }}>
-          <Knob size="lg" onClick={begin} busy={leaving} aria-label={welcomeCopy.enter}>
-            {welcomeCopy.enter}
-          </Knob>
-        </div>
-        <p className="welcome__hint">{welcomeCopy.hint}</p>
-      </div>
-    </div>
+      <div className="welcome__intro">
+        <p className="welcome__eyebrow latin">{SITE_NAME} · {welcomeCopy.lines[0]}</p>
+        <Dialog.Title asChild>
+          <h1 className="welcome__title display" aria-label={welcomeCopy.title}>
+            {chars.map((c, i) => (
+              <span key={i} className="welcome__char" aria-hidden="true" style={{ ['--d' as string]: `${0.25 + i * 0.09}s` }}>
+                {c}
+              </span>
+            ))}
+          </h1>
+        </Dialog.Title>
+        <span className="welcome__divider" aria-hidden="true" />
+        <Dialog.Description asChild>
+          <p className="welcome__sub">{welcomeCopy.sub}</p>
+        </Dialog.Description>
+        <button type="button" className="welcome__enter" onClick={begin} aria-label={welcomeCopy.enter} disabled={leaving}>
+          <span className="welcome__enter-ring" aria-hidden="true" />
+          <span className="welcome__enter-label">{welcomeCopy.enter}</span>
+        </button>
+          </div>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

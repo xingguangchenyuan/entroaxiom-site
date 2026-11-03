@@ -1,62 +1,54 @@
-# entroaxiom · 前端
+# entroaxiom · 前端 v3「星仪」
 
 > 在无序的熵变中，确立世界的公理。
 
-神秘星系 / 黑洞 / 哲学感的个人站点前端。Vite + React 18 + TypeScript，无新增运行时依赖。
-背景是一块实时渲染的 WebGL 黑洞（会随页面切换而「靠近」「远离」），界面用液态玻璃与拟物旋钮组成。
+一座私人星仪：每个栏目都是一颗有自己颜色的天体，围绕背景里的 WebGL 黑洞公转。
+Vite + React 18 + TypeScript；主要依赖：`react-router-dom`、Markdown 渲染链（`react-markdown` + remark / rehype + KaTeX）、`@radix-ui/react-dialog`（欢迎层），以及两套开源字体（`@fontsource/cinzel` 拉丁铭文、`@fontsource/jetbrains-mono` 数据读数）；衬线字体 Entro Serif 随仓库自带。
 
-## 页面
+## 栏目与天体
 
-| 路径 | 内容 |
-|---|---|
-| `/` | 欢迎层 → 首页（轨道、三条公理、近期轨迹、星图预览、规模读数） |
-| `/notes` `/summaries` `/files` | 列表：搜索、分类筛选、排序，状态写入 URL |
-| `/notes/:id` `/summaries/:id` | 阅读页：目录、阅读进度、图片灯箱、上一篇/下一篇/同星座 |
-| `/files/:id` | 文件详情与预览/下载 |
-| `/atlas` | 星图：内容按分类/标签/文件类型形成的力导向图，另有时间轴视图 |
-| `/axioms` | 公理页（文字在 `src/config/axioms.ts`） |
-| `/owner` | 站长登录 |
-| `/console` | 站长控制台：概览、笔记/总结的 Markdown 编辑器（分栏预览、Ctrl+S）、文件上传与管理 |
-| `Ctrl/⌘ + K` | 全站搜索面板 |
+| 路径 | 栏目 | 天体 / 色相 | 交互 |
+|---|---|---|---|
+| `/` | 星仪 | 黑洞 | 星盘欢迎层 → 可悬停的太阳系仪（点行星进入栏目）、今日神谕牌、随笔余烬条、笔记账簿、书影音、留言彗星跑马灯、规模读数 |
+| `/essays` `/essays/:id` | 随笔 | 余烬 · 橙 `#ef8456` | 按年份的火星时间线；详情为书信体（首字下沉、心境/地点、落款） |
+| `/notes` `/notes/:id` | 学习笔记 | 冰卫星 · 青 `#9fd6e0` | 冰晶卡片网格；详情含目录、阅读进度、KaTeX、图片灯箱 |
+| `/shelf` | 书影音 | 气态巨星 · 紫 `#ab93ff` | 书/影/音光谱切换，「航行中」轨道，程序化星云封面墙，侧抽屉详情（`?item=`） |
+| `/files` `/files/:id` | 文件库 | 陨石带 · 金 `#e9bd5e` | 质量光谱条、陨石图标、按大小排序 |
+| `/guestbook` | 留言区 | 彗星 · 青绿 `#72e0b9` | 选择行星星符留言，留言以彗星落下；草稿自动保存；站长回复 |
+| `/atlas` | 星图 | 玫瑰 | 极坐标星图（角度=栏目，半径=时间，越新越近中心），悬停连出同标签星座；时间轴、标签星云视图 |
+| `/axioms` | 公理 | 金 | 七张可翻转的塔罗牌 + 空着的第八张 |
+| `Ctrl/⌘ K` 或 `/` | 检索星空 | — | 全站搜索面板 |
+
+页脚有按当天计算的月相。
 
 ## 运行
 
 ```bash
 npm ci
-npm run dev          # 对接本机后端 http://127.0.0.1:8000（/api 与 /uploads 由 Vite 代理，保持同源）
-npm run dev:demo     # 不需要后端，使用随包演示内容
-npm run build        # 类型检查 + 构建到 dist/
+npm run dev:demo     # 不需要后端，使用演示内容
+npm run dev          # 对接 http://127.0.0.1:8000（/api /uploads 由 Vite 代理）
+npm test             # test:regress（node:test 回归）+ test:unit（Vitest 单元测试）
+npm run lint         # ESLint
+npm run format:check # Prettier 检查（npm run format 会改写文件）
+npm run build        # 类型检查 + 构建（正式构建会自动剔除 dist/demo-assets）
 npm run build:demo
-npm test             # 分页、校验字段与公开内容缓存回归
 ```
 
-后端端口不同时：`VITE_DEV_BACKEND=http://127.0.0.1:9000 npm run dev`。
+## 后端
 
-## 与后端的对接约定（同源）
+见 [docs/API.md](docs/API.md)：essays / notes / files / shelf / guestbook 五组公开接口与字段约定。
+旧版的「文章总结」与站内控制台已移除；内容管理与留言审核交给独立后台。
 
-- 只请求同源 `/api/public/*`、`/api/auth/*`、`/api/admin/*`，不支持也不需要 `VITE_API_BASE`。
-- 响应信封 `{success, data, error:{code,message,details}}`；公开接口 404 一律显示「内容不存在」（私密/草稿对访客不可见）。
-- 访客不会触发 `/api/auth/*`：只有登录成功过的浏览器才会在启动时问一次 `/api/auth/me`。
-- 站长会话是 HttpOnly Cookie，前端读不到；新建内容默认「仅自己 + 草稿」，需要手动切到「公开 + 已发布」访客才看得到。
-- 生产环境用后端包内 `deploy/nginx/conf.d/site.conf` / `site-https.conf.example`：`/api` 转发到 FastAPI，`/uploads/public/` 由 Nginx 只读提供，其余上传目录不对外开放；静态页面指向 `dist/` 并配置 history 回退。不要把整个上传目录直接开放，也不要在生产关闭 Secure Cookie。
+## 部署
 
-前端 ZIP 保留原来的 `site/` 根目录。若使用后端随附的 Docker Compose，请将该目录命名为 `entroaxiom-site`，与 `entroaxiom-backend` 并列，或按实际路径调整 Compose 的前端 `dist` 挂载。
+静态产物 + 同源 API，history 路由需要 `try_files … /index.html`，带哈希的资源可以长期缓存、`index.html` 不缓存。Nginx 示例与上线后的待办见 [docs/DEPLOY.md](docs/DEPLOY.md)。
 
 ## 想改什么，去哪里改
 
-- 站名、标语、导航：`src/config/site.ts`
-- 三条公理与首页哲学文案：`src/config/axioms.ts`
-- 三个「世界」（笔记/总结/文件）的名称与说明：`src/config/worlds.ts`
-- 颜色、字号、间距：`src/styles/tokens.css`；玻璃与旋钮：`src/styles/glass.css`
-- 黑洞的形态与各页面机位：`src/components/sky/`
-- 演示内容：`src/content/demo/`（仅 `dev:demo` / `build:demo` 使用）
-
-标题字体 `Entro Serif` 是按本站界面文字裁出的子集；你在控制台写的新标题里若有子集外的汉字，会自动回退到系统宋体/思源宋体，不会缺字。
-
-## 已验证与未验证
-
-2026-10-16 修复版已实际通过 `npm run build`（TypeScript + Vite 5）及 `npm test`（14 项）。已连接本地真实 FastAPI 后端进行浏览器回归：已有 ID `new` 的编辑、新建保存、导航/后退的未保存提示、退出确认、422 字段高亮，以及撤回公开内容后首页和搜索更新。测试使用独立临时数据库，不触及正式数据。
-
-原版 34 个视觉相关文件已逐一进行 SHA256 比对，样式、字体资源、首页视觉、黑洞、配置及基础 UI 组件均原样保留。确认提示复用原有组件，没有重做界面。
-
-未验证：目标 Linux 服务器、Docker/Nginx/HTTPS 实际部署及生产环境数据迁移。构建仍有单个 JS 包超过 500 kB 的体积提示（非构建失败）；此次未做视觉或加载结构重构。
+- 站名、导航、文案：`src/config/site.ts`
+- 五个天体（名称、颜色、轨道、背景色调）：`src/config/worlds.ts`
+- 七条公理：`src/config/axioms.ts`
+- 颜色、字体、间距：`src/styles/tokens.css`
+- 黑洞与星云着色器：`src/components/sky/`
+- 衬线字体 Entro Serif（分片加载）：`scripts/build-fonts.py`、`scripts/fonts/base-codepoints.txt`，产物在 `src/assets/fonts/entro-serif/` 与 `src/styles/fonts.css`
+- 演示内容：`src/content/demo/`

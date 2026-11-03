@@ -1,0 +1,5 @@
+# 站点是 history 路由的单页应用，所有页面都由 index.html 承载，可以放心抓取。
+# 上线后建议在这里加一行：Sitemap: https://你的域名/sitemap.xml（sitemap 需要由后端按随笔 / 笔记列表生成）
+User-agent: *
+Allow: /
+Disallow: /api/

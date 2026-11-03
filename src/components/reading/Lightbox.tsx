@@ -14,7 +14,7 @@ interface Props {
 export function Lightbox({ src, alt, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   useBodyScrollLock(true);
-  useFocusTrap(true, ref);
+  useFocusTrap(true, ref, { onEscape: onClose });
 
   return (
     <div
@@ -23,7 +23,6 @@ export function Lightbox({ src, alt, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label={alt || copy.zoomAlt}
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <button type="button" className="lightbox__close" aria-label={copy.close} onClick={onClose}>
