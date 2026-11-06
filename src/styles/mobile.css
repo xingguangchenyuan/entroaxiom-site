@@ -1,0 +1,1452 @@
+/* ==========================================================================
+   移动端 · 「手持星仪」
+   --------------------------------------------------------------------------
+   只在窄屏生效的一层覆盖样式（桌面样式完全不动）。三段式结构：
+     1) 顶栏收窄成一条观测缝，2) 内容按拇指可达重排（页头压扁、横滑代替换行），
+     3) 底部「轨道坞」承接五个常去模块 + 全部栏目。
+   断点统一用 860px：这一档以下顶栏的链接列表本来就已经隐藏，正好整体切换成手机形态。
+   ========================================================================== */
+
+/* 只在某一侧出现的文案（触控 / 鼠标语境分开写，避免在手机上出现「把鼠标移过去」） */
+.only-mob { display: none; }
+
+@media (max-width: 860px) {
+  :root {
+    --nav-h: 60px;
+    --gutter: 18px;
+    --r-lg: 20px;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-size: 16px;
+  }
+
+  .only-wide { display: none !important; }
+  .only-mob { display: revert; }
+
+  /* 手指点得中的最小尺寸：44px 是 iOS/Android 的共同建议值，这里一律按 44px 收口。
+     （原来这一档写的是 40px，比注释里的建议值小，实机上手点偏一半就落空） */
+  .chip,
+  .seg__item,
+  .shelf-kind,
+  .atlas-legend__item {
+    min-height: 44px;
+  }
+
+  .knob--lg {
+    min-height: 52px;
+    padding: 0 22px;
+  }
+
+  .text-action {
+    min-height: 44px;
+  }
+
+  /* 顶栏品牌块：桌面只是个 26px 高的横排字标，点到「entroaxiom」三个字母之外就落空 */
+  .nav__brand {
+    min-height: 44px;
+  }
+
+  /* 标签在桌面是纯装饰的 26px 小胶囊，但星图卡片和文章页把它们做成了链接 / 按钮 */
+  a.tag,
+  button.tag {
+    min-height: 44px;
+    padding-inline: 13px;
+  }
+
+  /* 留言里带网址的作者名同样是个链接，默认只有一行字高 */
+  .comet__name a {
+    min-height: 44px;
+    padding: 6px 0;
+  }
+
+  /* 图片灯箱的关闭钮：42px 差一点点，且贴着安全区边角 */
+  .lightbox__close {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    width: 44px;
+    height: 44px;
+  }
+
+  /* 阅读页「目录」浮钮：桌面靠 padding 撑到 38px，手机上加到 44px */
+  .toc__fab {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  /* 表单控件保持 16px，iOS 才不会在聚焦时把整页放大 */
+  .slot input,
+  .slot textarea,
+  .search-box input,
+  .gb-field input,
+  .gb-body {
+    font-size: 16px;
+  }
+
+  /* 横向滑动的容器不显示滚动条，但保留惯性；右端留一道渐隐，暗示还能继续滑 */
+  .filter-row,
+  .atlas-legend,
+  .tarot-spread,
+  .shelf-doing ul {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 26px), transparent 100%);
+  }
+
+  .filter-row::-webkit-scrollbar,
+  .atlas-legend::-webkit-scrollbar,
+  .tarot-spread::-webkit-scrollbar,
+  .shelf-doing ul::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   顶栏：一条更窄的观测缝
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .nav {
+    padding: 8px var(--gutter) 0;
+  }
+
+  /* 胶囊上方那条缝会露出滚过去的内容（切掉半个字）。铺一层向下淡出的压暗层，
+     比把胶囊加高更轻，也不会在首屏多出一条硬边 */
+  .nav::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: calc(var(--nav-h) + 16px);
+    background: linear-gradient(
+      to bottom,
+      rgba(3, 4, 10, 0.98) 0,
+      rgba(3, 4, 10, 0.92) 40px,
+      rgba(3, 4, 10, 0) 100%
+    );
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .nav__bar {
+    height: calc(var(--nav-h) - 12px);
+    padding: 0 6px 0 12px;
+    gap: 10px;
+  }
+
+  /* 手机上内容会从胶囊底下穿过，底色要比桌面更实，否则两条文字叠在一起 */
+  .nav__bar,
+  .nav.is-condensed .nav__bar {
+    background: rgba(7, 9, 20, 0.93);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(22px) saturate(140%);
+  }
+
+  .nav__mark {
+    width: 26px;
+    height: 26px;
+  }
+
+  .nav__word {
+    font-size: 0.92rem;
+    letter-spacing: 0.06em;
+  }
+
+  .nav__sub {
+    font-size: 0.75rem;
+    letter-spacing: 0.34em;
+  }
+
+  .nav__tools {
+    gap: 2px;
+  }
+
+  .nav__tool {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+
+  /* 搜索只剩图标：文字标签在手机上挤不下，也没有快捷键 */
+  .nav__search-label,
+  .nav__kbd {
+    display: none;
+  }
+
+  .nav__search {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   全部栏目菜单：两栏并排的「星表」，一行放两个分区，中缝一条竖线、行间一条横线
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .mobile-menu {
+    top: calc(var(--nav-h) + 2px);
+    padding: 10px;
+    max-height: calc(100svh - var(--nav-h) - 96px);
+    overflow-y: auto;
+    /* 菜单正下方就是每帧重绘的星空和星系标签。原来那层 0.92 的玻璃底会把下层的字
+       隐约透上来，而且字跟着动画一直在游走，盯久了晕。
+       这里直接做成不透明的底面：哪怕只剩 2% 的透出量，在这么暗的底子上也够读出字形。
+       靠一层自上而下的渐变补回深度，不至于变成一块死板的色块。 */
+    --menu-bg:
+      radial-gradient(140% 96% at 50% -18%, rgba(52, 60, 100, 0.6), transparent 74%),
+      linear-gradient(180deg, #0a0c1a, #05060e);
+    background: var(--menu-bg);
+    /* 底子既然不透光，背景模糊就只剩开销：全站最贵的 backdrop-filter 叠在 WebGL 画布上，
+       手机每帧都要重算一次，直接关掉。 */
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  /* 低性能档会把 .glass 统一换回半透明底（见 glass.css 的 html[data-perf='low'] 段），
+     这里必须压住它，否则叠在星空上又会透字 */
+  html[data-perf='low'] .glass.mobile-menu {
+    background: var(--menu-bg);
+  }
+
+  .mobile-menu__list {
+    position: relative;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  /* 中缝：同一行里两个分区之间的竖分隔线 */
+  .mobile-menu__list::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    bottom: 10px;
+    width: 1px;
+    margin-left: -0.5px;
+    background: var(--line-2);
+    pointer-events: none;
+  }
+
+  /* 行间横分隔线：第一行是列表顶边，不画 */
+  .mobile-menu__list li {
+    border-top: 1px solid var(--line);
+  }
+
+  .mobile-menu__list li:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
+  /* 一栏只剩半屏宽，中文名与拉丁铭文改成上下两行，横着排会挤成一条 */
+  .mobile-menu__link {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: center;
+    column-gap: 9px;
+    row-gap: 1px;
+    min-height: 58px;
+    padding: 9px 10px;
+  }
+
+  .mobile-menu__link .nav__star {
+    grid-row: 1 / -1;
+  }
+
+  .mobile-menu__label {
+    grid-column: 2;
+    font-size: 0.98rem;
+  }
+
+  .mobile-menu__latin {
+    grid-column: 2;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    opacity: 0.7;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-menu__tools {
+    margin-top: 10px;
+  }
+
+  .mobile-menu__tools > * {
+    flex: 1;
+    min-height: 46px;
+  }
+}
+
+/* 横屏手机（视口很矮）：两栏四行 + 检索漂流一屏放不下。
+   把行高压到 44、藏掉拉丁铭文，尽量让整张星表一屏看完。 */
+@media (max-width: 860px) and (max-height: 560px) {
+  .mobile-menu {
+    max-height: calc(100svh - var(--nav-h) - 76px);
+  }
+
+  .mobile-menu__link {
+    min-height: 44px;
+    padding: 5px 10px;
+    row-gap: 0;
+  }
+
+  .mobile-menu__latin {
+    display: none;
+  }
+
+  .mobile-menu__tools {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .mobile-menu__tools > * {
+    min-height: 44px;
+  }
+}
+
+/* 再矮一档（横屏 iPhone SE 这类 375 高的屏）：把面板内边距和工具栏间距也压掉，
+   让四行星表 + 检索漂流正好落在轨道坞上沿之内，不靠滚动。 */
+@media (max-width: 860px) and (max-height: 420px) {
+  .mobile-menu {
+    padding: 6px;
+  }
+
+  .mobile-menu__tools {
+    margin-top: 2px;
+    padding-top: 2px;
+  }
+}
+
+/* 更矮就真的放不下了：底部渐隐提示「下面还有」，而不是硬生生切断一行 */
+@media (max-width: 860px) and (max-height: 360px) {
+  .mobile-menu {
+    -webkit-mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 18px), transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 18px), transparent 100%);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   轨道坞（OrbitDock）：屏幕底部的一条星轨
+   -------------------------------------------------------------------------- */
+.dock {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .dock {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    z-index: 34;
+    display: block;
+    padding: 5px 4px 4px;
+    border-radius: 22px;
+    border: 1px solid var(--glass-border);
+    background: rgba(8, 10, 22, 0.9);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+    box-shadow: 0 -1px 0 rgba(239, 232, 218, 0.06) inset, 0 14px 40px -18px rgba(0, 0, 0, 0.9);
+  }
+
+  .dock__list {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: stretch;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dock__cell {
+    min-width: 0;
+  }
+
+  .dock__item {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 5px;
+    width: 100%;
+    min-height: 48px;
+    padding: 6px 0 4px;
+    border: 0;
+    background: none;
+    border-radius: 16px;
+    color: var(--ash);
+    text-align: center;
+    transition: color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out);
+  }
+
+  .dock__item[aria-current='page'] {
+    color: var(--bone);
+    background: rgba(239, 232, 218, 0.06);
+  }
+
+  .dock__bead {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    color: var(--c, var(--bone-2));
+  }
+
+  .dock__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c, var(--bone-2));
+    opacity: 0.62;
+    transition: opacity var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-spring);
+  }
+
+  .dock__ring {
+    position: absolute;
+    inset: 1px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--c, var(--bone-2)) 45%, transparent);
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-spring);
+  }
+
+  .dock__item[aria-current='page'] .dock__dot {
+    opacity: 1;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px 1px var(--c);
+  }
+
+  .dock__item[aria-current='page'] .dock__ring {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .dock__item:active {
+    background: rgba(239, 232, 218, 0.1);
+  }
+
+  .dock__label {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .dock__item--more .dock__bead {
+    color: var(--dust);
+  }
+
+  /* 内容给底部星轨让位 */
+  .page,
+  .home {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* 阅读页右下角还挂着「目录」浮钮（78–118px 高），页尾再多留一截，
+     否则文章末尾的上一篇 / 下一篇会被它压住 */
+  .page--read {
+    padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .footer {
+    padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   首页 · hero：标题先落地，星仪缩到一屏之内
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    align-content: start;
+    gap: 0;
+    padding: calc(var(--nav-h) + 10px) 0 20px;
+  }
+
+  .hero__copy {
+    max-width: none;
+  }
+
+  .hero__kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.24em;
+  }
+
+  .hero__title {
+    margin: 10px 0 0;
+    font-size: clamp(2rem, 9.4vw, 2.75rem);
+    line-height: 1.18;
+    letter-spacing: 0.005em;
+  }
+
+  .hero__actions {
+    margin-top: 20px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .hero__actions .knob {
+    flex: 1 1 40%;
+  }
+
+  /* 手机上没有快捷键，检索变成一枚安静的胶囊，和两个主按钮区分开 */
+  .hero__search {
+    flex: 0 0 auto;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    margin-top: 2px;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--bone);
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .hero__search:active {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .hero__search kbd {
+    display: inline-block;
+    margin: 0 4px;
+  }
+
+  /* 星仪排在文案之后：先读到“这是什么”，再看到可点的星系 */
+  .hero__orrery {
+    order: 0;
+    margin: 6px 0 0;
+  }
+
+  /* 手机上一屏只有一栏，星仪直接吃满这一栏的宽度（桌面那两条 --size 是给双栏排版的）。
+     真正的放大在 galaxy.ts 里：手机上把最外轨道从舞台的 0.38 提到 0.46，
+     所以画布没变宽多少，画出来的星系却大了一圈。 */
+  .gx {
+    --size: min(100%, 480px);
+  }
+
+  /* 小屏上五个标签会挤在一起：去掉拉丁副名，只留单行中文，做成可点的胶囊 */
+  .gx__label {
+    gap: 0;
+    padding: 7px 11px;
+    min-height: 36px;
+    align-content: center;
+    border-radius: 999px;
+    border: 1px solid var(--line-2);
+    background: rgba(6, 8, 18, 0.66);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* 标签是绝对定位浮在星轨上的，直接加高会和相邻的标签叠在一起。
+     改用一层不吃布局的伪元素把可点范围撑到 44px（视觉上仍是 36px 的胶囊）。 */
+  .gx__label::after {
+    content: '';
+    position: absolute;
+    inset: -4px -6px;
+    border-radius: 999px;
+  }
+
+  .gx__zh {
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+  }
+
+  .gx__meta {
+    display: none;
+  }
+
+  .gx__label:active {
+    border-color: currentColor;
+  }
+
+  .hero__cue {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   首页 · 各区块
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .home-body {
+    gap: 52px;
+    padding-bottom: 12px;
+  }
+
+  .home-sec__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .home-sec__title {
+    font-size: 1.85rem;
+    line-height: 1.2;
+  }
+
+  .home-sec__lead {
+    font-size: 0.9rem;
+  }
+
+  .home-sec__cta {
+    min-height: 44px;
+  }
+
+  /* 神谕：牌面缩到左侧，正文左对齐，动作铺满整行 */
+  .oracle {
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 6px 14px;
+    padding: 16px 16px 10px;
+  }
+
+  .oracle__side {
+    display: contents;
+  }
+
+  .oracle__card {
+    grid-row: 1 / span 3;
+    width: 112px;
+    padding: 14px 6px;
+    gap: 4px;
+    align-self: start;
+  }
+
+  .oracle__numeral {
+    top: 9px;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+  }
+
+  .oracle__arcana {
+    bottom: 9px;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+  }
+
+  .oracle__title {
+    font-size: 1.02rem;
+    line-height: 1.3;
+  }
+
+  .oracle__gloss {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    opacity: 0.75;
+  }
+
+  .oracle__side .home-kicker {
+    margin: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+  }
+
+  .oracle__body {
+    font-size: 0.9rem;
+    line-height: 1.72;
+    text-align: left;
+    margin: 4px 0 0;
+  }
+
+  .oracle__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0 18px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--line);
+  }
+
+  .oracle__actions .text-action {
+    min-height: 44px;
+    font-size: 0.78rem;
+  }
+
+  .essay-card {
+    min-height: 0;
+    padding: 18px;
+  }
+
+  /* 年表行整行可点，但桌面靠 14px 上下内边距才 40px；
+     手机收窄内边距后行高会掉到 40px 以下，用 min-height 兜住 */
+  .note-ledger__row {
+    min-height: 44px;
+    padding: 6px 0;
+  }
+
+  .shelf-chip {
+    padding: 12px 14px;
+  }
+
+  .comet-ticker {
+    margin-inline: calc(var(--gutter) * -1);
+    padding: 4px 0;
+  }
+
+  .comet-ticker__item {
+    width: 264px;
+    padding: 14px 16px;
+  }
+
+  .comet-ticker__item p {
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .scale {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .meter {
+    padding: 16px 14px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   模块页 · 页头压扁：行星缩成一枚徽章，标题与描述紧随其后
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .page {
+    padding-top: calc(var(--nav-h) + 14px);
+  }
+
+  .mod-head {
+    position: relative;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: start;
+    gap: 2px 12px;
+    padding: 2px 0 14px;
+    margin-bottom: 12px;
+  }
+
+  .mod-head__planet {
+    width: 54px;
+    margin-top: 1px;
+  }
+
+  .mod-head__latin {
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+  }
+
+  .mod-head__title {
+    font-size: 1.85rem;
+    line-height: 1.12;
+    margin: 2px 0 0;
+  }
+
+  .mod-head__motto {
+    font-size: 0.92rem;
+    line-height: 1.45;
+    margin: 4px 0 0;
+  }
+
+  .mod-head__desc {
+    margin: 6px 0 0;
+    font-size: 0.82rem;
+    line-height: 1.62;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .mod-head__count {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+  }
+
+  .mod-head__aside {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+
+  .mod-head__aside .demo-badge {
+    font-size: 0.75rem;
+    padding: 2px 7px;
+  }
+
+  /* 工具条：搜索独占一行，排序与筛选跟在后面 */
+  .toolbar {
+    margin: 4px 0 8px;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .toolbar .search-box {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .seg {
+    padding: 3px;
+  }
+
+  .seg__item {
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 0.78rem;
+  }
+
+  .filter-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    margin: 0 0 16px;
+    padding: 2px 0 6px;
+    /* 渐隐落在页面右缘而不是屏幕外，才看得出“还能滑” */
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 22px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 22px), transparent 100%);
+  }
+
+  .filter-row > * {
+    flex: none;
+  }
+
+  .chip {
+    min-height: 44px;
+    padding: 0 13px;
+    font-size: 0.82rem;
+  }
+
+  .chip__n {
+    font-size: 0.75rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   列表：随笔年表 / 笔记卡片 / 文件轨道
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .ember-line {
+    padding-left: 0;
+  }
+
+  .ember-line__list::before {
+    left: 49px;
+  }
+
+  .ember-line__item {
+    grid-template-columns: 38px 20px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .ember-line__y {
+    font-size: 2.4rem;
+  }
+
+  .ember-line__day {
+    font-size: 1.15rem;
+    line-height: 1.1;
+  }
+
+  .ember-line__mon {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+  }
+
+  .ember-line__when {
+    padding-top: 14px;
+  }
+
+  .ember-card {
+    padding: 14px 16px;
+  }
+
+  .ember-card__title {
+    font-size: 1.08rem;
+    line-height: 1.35;
+  }
+
+  .ember-card__sum {
+    font-size: 0.84rem;
+    line-height: 1.65;
+  }
+
+  .frost-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .frost-card {
+    padding: 16px 16px 14px;
+  }
+
+  .frost-card__title {
+    font-size: 1.06rem;
+    line-height: 1.35;
+  }
+
+  .frost-card__sum {
+    font-size: 0.84rem;
+    line-height: 1.65;
+  }
+
+  .belt__row {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 8px 12px;
+    padding: 12px 4px;
+  }
+
+  .rock {
+    width: 40px;
+    height: 40px;
+  }
+
+  .belt__name {
+    font-size: 0.95rem;
+  }
+
+  .file-grid,
+  .file-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .file-facts {
+    order: 2;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   阅读页：一条清晰的左轴
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .article__head {
+    max-width: none;
+    margin: 0 0 20px;
+    text-align: left;
+  }
+
+  .article__back {
+    min-height: 44px;
+    margin-bottom: 8px;
+  }
+
+  .article__title {
+    font-size: 1.72rem;
+    line-height: 1.3;
+    letter-spacing: 0.005em;
+  }
+
+  .article__meta {
+    justify-content: flex-start;
+    gap: 6px 12px;
+    margin-top: 10px;
+    font-size: 0.75rem;
+  }
+
+  .article__abstract {
+    margin: 16px 0 0;
+    max-width: none;
+    padding: 0 0 0 14px;
+    border-right: 0;
+    font-size: 0.98rem;
+    line-height: 1.75;
+    text-align: left;
+  }
+
+  .article__layout {
+    gap: 20px;
+  }
+
+  .article__body {
+    padding: 20px 16px 26px;
+    border-radius: var(--r-md);
+  }
+
+  .prose {
+    font-size: 1.02rem;
+    line-height: 1.9;
+  }
+
+  .prose h2 {
+    font-size: 1.32rem;
+    margin-top: 1.9em;
+  }
+
+  .prose h3 {
+    font-size: 1.12rem;
+  }
+
+  .prose blockquote {
+    margin: 1.4em 0;
+    padding: 10px 14px;
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  .prose pre {
+    margin-inline: -6px;
+    font-size: 0.8rem;
+  }
+
+  .toc__fab {
+    right: 14px;
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .toc__sheet {
+    right: 12px;
+    bottom: calc(128px + env(safe-area-inset-bottom, 0px));
+    width: calc(100vw - 24px);
+  }
+
+  .neighbors__pn {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   星图：星盘横向可滑、星点放大，摘要卡不再吸顶
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .atlas-head {
+    margin: 0 0 14px;
+    max-width: none;
+    text-align: left;
+  }
+
+  .atlas-head__title {
+    font-size: 2.3rem;
+    line-height: 1.12;
+  }
+
+  .atlas-head__lead {
+    margin: 8px 0 14px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+  }
+
+  .atlas-head__bar {
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .atlas-legend {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    margin: 0 0 6px;
+    padding: 2px 0 6px;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 22px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 22px), transparent 100%);
+  }
+
+  .atlas-legend__item {
+    flex: none;
+    min-height: 44px;
+    font-size: 0.8rem;
+  }
+
+  .chart {
+    gap: 12px;
+  }
+
+  /* 星盘比屏幕宽一点，用横滑看全；环与字相应放大，手指才点得到 */
+  .chart__stage {
+    overflow-x: auto;
+    margin: 0 calc(var(--gutter) * -1);
+    padding: 0 var(--gutter);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chart__stage::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chart__svg {
+    width: 430px;
+    max-width: none;
+    margin: 0 auto;
+  }
+
+  /* 扇区铭文在窄屏会被裁掉一半，模块名由图例芯片承担 */
+  .chart__label {
+    display: none;
+  }
+
+  .chart__core-t {
+    font-size: 20px;
+  }
+
+  .chart__core-s {
+    font-size: 17px;
+  }
+
+  .chart__card {
+    position: static;
+    padding: 14px 16px;
+    min-height: 0;
+  }
+
+  .chart__hint {
+    font-size: 0.84rem;
+    line-height: 1.7;
+  }
+
+  .atlas-constellations {
+    margin-top: 18px;
+    text-align: left;
+  }
+
+  .trail__item {
+    grid-template-columns: 12px 46px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px 2px;
+  }
+
+  .nebula-cloud {
+    padding: 20px 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   公理：七张牌改成一副可横滑的牌组
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .axioms__head {
+    margin: 0 0 16px;
+    max-width: none;
+    text-align: left;
+  }
+
+  .axioms__title {
+    font-size: 2.3rem;
+    line-height: 1.14;
+  }
+
+  .axioms__p {
+    font-size: 0.9rem;
+    line-height: 1.72;
+  }
+
+  .tarot-hint {
+    margin: 0 0 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    color: var(--ash);
+    text-transform: uppercase;
+  }
+
+  ol.tarot-spread {
+    display: flex;
+    gap: 12px;
+    max-width: none;
+    margin: 0 calc(var(--gutter) * -1);
+    padding: 4px var(--gutter) 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+  }
+
+  .tarot-slot {
+    flex: 0 0 min(68vw, 280px);
+    scroll-snap-align: center;
+  }
+
+  .tarot__face {
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  .tarot__title {
+    font-size: 1.12rem;
+  }
+
+  .tarot__body {
+    font-size: 0.84rem;
+    line-height: 1.72;
+  }
+
+  .tarot__gloss {
+    font-size: 0.75rem;
+  }
+
+  .tarot__num {
+    font-size: 1.1rem;
+  }
+
+  .tarot__arcana {
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+  }
+
+  /* 「合上」只有两个字，横向只有 28px；补一点内边距到 44px，别让手指够不着 */
+  .tarot__reflip {
+    min-width: 44px;
+    padding-inline: 10px;
+  }
+
+  .axioms__eighth {
+    gap: 16px;
+  }
+
+  .axioms__eighth-card {
+    width: 68px;
+  }
+
+  .axioms__closing {
+    margin: 34px 0 16px;
+    text-align: left;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   留言：先写字，再读别人的彗星
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .gb {
+    gap: 22px;
+  }
+
+  .gb-form {
+    padding: 16px;
+    gap: 12px;
+    border-radius: var(--r-md);
+  }
+
+  .gb-form__title {
+    font-size: 1.2rem;
+  }
+
+  .gb-sigils {
+    padding: 0;
+    /* fieldset 默认 min-inline-size: min-content，会把 4 列星符撑出卡片 */
+    min-inline-size: 0;
+    width: 100%;
+  }
+
+  .gb-sigils__row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .gb-sigil {
+    min-width: 0;
+    min-height: 46px;
+    padding: 4px 2px;
+    justify-content: center;
+  }
+
+  .gb-field--half {
+    grid-column: 1 / -1;
+  }
+
+  .gb-body {
+    min-height: 110px;
+    line-height: 1.7;
+    /* 手机上别出现桌面式的右下角拖拽手柄 */
+    resize: none;
+  }
+
+  .gb-actions {
+    gap: 10px;
+  }
+
+  .gb-actions .knob {
+    flex: 1;
+  }
+
+  .comet {
+    padding: 14px 14px 14px 16px;
+  }
+
+  .comet__body {
+    font-size: 0.92rem;
+    line-height: 1.78;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   书影音 / 文件
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .shelf-bar {
+    gap: 10px;
+    margin: 4px 0 16px;
+  }
+
+  .shelf-kind {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
+  .shelf-doing ul {
+    gap: 10px;
+  }
+
+  .shelf-doing li {
+    flex: 0 0 min(80vw, 320px);
+  }
+
+  .shelf-doing__item {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .shelf-wall {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 12px;
+  }
+
+  .cover__title {
+    font-size: 0.8rem;
+    line-height: 1.35;
+  }
+
+  .drawer__panel {
+    width: 100vw;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   页脚
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .footer {
+    margin-top: 24px;
+  }
+
+  .footer__inner {
+    padding-top: 24px;
+    gap: 20px;
+  }
+
+  .footer__nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
+  }
+
+  .footer__nav a {
+    min-height: 44px;
+    padding: 8px 0;
+    font-size: 0.85rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   小屏（≤380px）再收紧一点，避免标题与按钮换行
+   -------------------------------------------------------------------------- */
+@media (max-width: 380px) {
+  .hero__title {
+    font-size: 1.92rem;
+  }
+
+  /* 320px 的机器上三个工具按钮会顶出胶囊右缘：收紧品牌字与工具间距，
+     但按钮本身不再缩到 44px 以下（否则手指点不中） */
+  .nav__bar {
+    padding: 0 4px 0 10px;
+    gap: 6px;
+  }
+
+  .nav__mark {
+    width: 24px;
+    height: 24px;
+  }
+
+  .nav__word {
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+  }
+
+  .nav__tools {
+    gap: 0;
+  }
+
+  .nav__tool,
+  .nav__search {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+
+  .dock__label {
+    font-size: 0.75rem;
+  }
+
+  .oracle {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .oracle__card {
+    width: 96px;
+  }
+
+  .mod-head {
+    grid-template-columns: 50px minmax(0, 1fr);
+  }
+
+  .mod-head__planet {
+    width: 46px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   浮层 · 命令面板与图片灯箱
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  /* 面板默认落在一条 auto 隐式轨道上：轨道会被内容的最小内容宽度撑开，
+     而 __box 的 width: min(640px, 100%) 又按撑开后的轨道算百分比，
+     于是 320px 屏幕上整块会越出右缘 39px。显式给一条可压缩的轨道。 */
+  .palette {
+    grid-template-columns: minmax(0, 1fr);
+    padding: calc(var(--nav-h) + 8px) var(--gutter) 0;
+  }
+
+  .palette__box {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 10px;
+  }
+
+  /* 用 svh 而不是 vh：地址栏收起 / 展开时列表不会突然长出一截把整块顶出屏幕 */
+  .palette__list {
+    max-height: min(58svh, 460px);
+  }
+
+  /* 每行按 44px 收口；行内留白收一点，标题能多显示几个字 */
+  .palette__row {
+    min-height: 44px;
+    padding: 8px 10px;
+    gap: 10px;
+  }
+
+  .palette__icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* 手机上既没有 Esc 键，也没有悬停——两样都不必占位置 */
+  .palette__esc,
+  .palette__hint {
+    display: none;
+  }
+
+  .palette__group {
+    padding: 10px 8px 4px;
+    font-size: 0.75rem;
+  }
+}

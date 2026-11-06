@@ -74,16 +74,12 @@ export function HomePage() {
             <span className="hero__line">在无序的熵变中，</span>
             <span className="hero__line hero__line--accent">确立世界的公理。</span>
           </h1>
-          <p className="hero__lead">
-            这是一座私人星系：随笔是余烬，笔记是冰卫星，书影音是借来的星光，文件是陨石带，留言是偶尔掠过的彗星。
-            <br />
-            把鼠标移到右边的星仪上，选一颗星降落。
-          </p>
           <div className="hero__actions">
             <Knob to="/atlas" size="lg">走进星图</Knob>
             <Knob tone="dark" size="lg" onClick={drift}>随机漂流</Knob>
             <button type="button" className="text-action hero__search" onClick={palette.open}>
-              或按 <kbd>/</kbd> 检索星空
+              <span className="only-wide">或按 <kbd>/</kbd> 检索星空</span>
+              <span className="only-mob">检索星空</span>
             </button>
           </div>
           <DemoBadge />

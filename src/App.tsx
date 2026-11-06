@@ -5,6 +5,7 @@ import { setSkyMode, setSkyTint } from './components/sky/skyStore';
 import { WelcomeOverlay } from './components/welcome/WelcomeOverlay';
 import { SkipLink } from './components/layout/SkipLink';
 import { TopNav } from './components/layout/TopNav';
+import { OrbitDock } from './components/layout/OrbitDock';
 import { Footer } from './components/layout/Footer';
 import { PaletteProvider } from './components/layout/CommandPalette';
 import { ErrorBoundary } from './components/state/ErrorBoundary';
@@ -170,6 +171,7 @@ function Shell() {
           </div>
         </ErrorBoundary>
         <Footer />
+        <OrbitDock />
       </div>
     </>
   );

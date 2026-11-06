@@ -109,6 +109,7 @@ export function AxiomsPage() {
         ))}
       </header>
 
+      <p className="tarot-hint only-mob" aria-hidden="true">左右滑动 · 七张牌依次展开</p>
       <ol className="tarot-spread" role="list">
         {axioms.map((a, i) => (
           <Tarot key={a.numeral} a={a} i={i} />

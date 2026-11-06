@@ -4,6 +4,7 @@ import { navItems, SITE_NAME, copy } from '../../config/site';
 import { useDrift } from '../../hooks/useDrift';
 import { AxiomMark } from './AxiomMark';
 import { MobileMenu } from './MobileMenu';
+import { OPEN_MENU_EVENT } from './OrbitDock';
 import { usePalette } from './CommandPalette';
 import { IconDrift, IconMenu, IconClose, IconSearch } from '../ui/Icons';
 
@@ -30,6 +31,13 @@ export function TopNav() {
   const drift = useDrift();
 
   useEffect(() => setOpen(false), [pathname]);
+
+  // 底部轨道坞的「星表」格通过自定义事件请顶栏把菜单展开
+  useEffect(() => {
+    const openMenu = () => setOpen(true);
+    window.addEventListener(OPEN_MENU_EVENT, openMenu);
+    return () => window.removeEventListener(OPEN_MENU_EVENT, openMenu);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setCondensed(window.scrollY > 24);

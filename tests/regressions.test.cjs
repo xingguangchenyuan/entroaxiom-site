@@ -518,7 +518,8 @@ test('星核: 光图比原图大一圈以容纳拉长的耀斑；星系里星核
   assert.match(core, /FLARE_STRETCH\s*=\s*1\.75/);
   const gx = read('src/lib/galaxy.ts');
   assert.match(gx, /this\.coreHalf\s*=\s*r0 \* 1\.35/);
-  assert.match(gx, /this\.rOuter\s*=\s*S \* 0\.38/);
+  // 手机上舞台给轨道的比例更宽（0.46），桌面仍是 0.38
+  assert.match(gx, /this\.rOuter\s*=\s*S \* \(this\.opts\.mobile \? 0\.46 : 0\.38\)/);
   assert.match(gx, /core\.draw\(this\.ctx, x, y, this\.coreHalf/);
 });
 
@@ -648,4 +649,70 @@ test('没有组件用行内 visibility 顶穿 .stage[inert] 的隐藏', () => {
   };
   walk(path.resolve('src'));
   assert.deepEqual(offenders, []);
+});
+test('a11y: 移动端触控目标不小于 44px（例外必须用伪元素把可点范围撑开）', () => {
+  const css = read('src/styles/mobile.css');
+  // 手机上没有悬停，点不中就真的点不中。可视化高度可以小于 44px，
+  // 但那样的元素必须另配一条 ::after 把可点范围撑到 44px，否则算漏。
+  const expanded = /::after\s*\{[^}]*inset:\s*-/.test(css);
+  const offenders = [];
+  for (const m of css.matchAll(/min-height:\s*(\d+)px/g)) {
+    const px = Number(m[1]);
+    if (px === 0) continue; // 显式归零是不需要高度的容器
+    if (px < 44) offenders.push(m[0]);
+  }
+  // .gx__label 是唯一允许低于 44px 的可点元素：它绝对定位浮在星轨上，
+  // 直接加高会和相邻标签叠住，所以靠 ::after 撑开。
+  const softAllowed = offenders.length === 1 && offenders[0] === 'min-height: 36px' && expanded;
+  assert.ok(offenders.length === 0 || softAllowed, `触控目标过小且没有 ::after 撑开：${offenders.join(' / ')}`);
+  if (softAllowed) assert.match(css, /\.gx__label::after/);
+});
+
+test('a11y: 移动端字号不低于 12px（原来这里硬写 0.6875rem 把 12px 压到 11px）', () => {
+  const css = read('src/styles/mobile.css');
+  const small = [];
+  for (const m of css.matchAll(/font-size:\s*([0-9.]+)(px|rem)/g)) {
+    const px = m[2] === 'px' ? Number(m[1]) : Number(m[1]) * 16;
+    if (px < 12) small.push(m[0]);
+  }
+  assert.deepEqual(small, [], 'mobile.css 里出现了小于 12px 的字号');
+});
+
+test('布局: 命令面板给网格一条可压缩的轨道，窄屏不靠隐式轨道撑宽', () => {
+  const mobile = read('src/styles/mobile.css');
+  // .palette 是 display:grid，只写 justify-items 而没有 grid-template-columns 时，
+  // 隐式轨道会按内容 min-content 撑开，__box 的 100% 又按撑开后的轨道算，正反馈溢出。
+  assert.match(mobile, /\.palette\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(mobile, /\.palette__box\s*\{[^}]*max-width:\s*100%/);
+});
+
+test('布局: 手机首页的星仪吃满单栏宽度，轨道比例也放大（不再围一圈空白）', () => {
+  const mobile = read('src/styles/mobile.css');
+  // 桌面是双栏，--size 跟着右栏和视口高度走；手机只有一栏，直接吃满这一栏。
+  // 只按 88vw 算的话，390 的屏上画布只有 343px，而 hero 的内容宽度是 354px。
+  assert.match(mobile, /\.gx\s*\{[^}]*--size:\s*min\(100%,\s*480px\)/);
+  // 放大不能只放大画布：rOuter 0.38 时轨道只占画布 76%，四周一圈都是空的。
+  // 手机上提到 0.46，同样的画布宽度能画出更大的星系（桌面仍保持 0.38）。
+  const gx = read('src/lib/galaxy.ts');
+  assert.match(gx, /this\.rOuter\s*=\s*S \* \(this\.opts\.mobile \? 0\.46 : 0\.38\)/);
+});
+
+test('布局: 手机的全栏目菜单是两栏星表，栏间有分隔，底色不透出下层文字', () => {
+  const mobile = read('src/styles/mobile.css');
+  // 两栏并排：一屏放完 8 个分区，不用滚。
+  assert.match(mobile, /\.mobile-menu__list\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  // 两个分区之间的竖分隔线（列表的中缝），以及行与行之间的横线。
+  assert.match(mobile, /\.mobile-menu__list::before\s*\{[^}]*left:\s*50%[^}]*width:\s*1px/);
+  assert.match(mobile, /\.mobile-menu__list li\s*\{[^}]*border-top:\s*1px solid var\(--line\)/);
+  // 菜单正下方是每帧重绘的星空和星系标签。底色必须是不透明的：
+  // 只要还留着 0.9x 的半透明玻璃底，下层的字就会透上来并跟着动画游走。
+  const menuBlock = mobile.slice(mobile.indexOf('.mobile-menu {'));
+  const bg = menuBlock.slice(0, menuBlock.indexOf('}'));
+  assert.ok(!/background:\s*rgba\([^)]*,\s*0?\.\d+\s*\)/.test(bg),
+    `移动菜单的底色不能是半透明的，否则会透出下层文字：${bg}`);
+  assert.match(bg, /linear-gradient\(180deg,\s*#0a0c1a,\s*#05060e\)/);
+  // 底子不透光之后，叠在 WebGL 画布上的 backdrop-filter 只剩开销。
+  assert.match(bg, /backdrop-filter:\s*none/);
+  // 低性能档会把 .glass 统一换成半透明底，这里必须压住它。
+  assert.match(mobile, /html\[data-perf='low'\] \.glass\.mobile-menu\s*\{[^}]*background:\s*var\(--menu-bg\)/);
 });

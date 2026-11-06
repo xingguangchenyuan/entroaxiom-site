@@ -19,6 +19,8 @@ import './styles/atlas.css';
 import './styles/pages.css';
 import './styles/guestbook.css';
 import './styles/shelf.css';
+// 移动端覆盖层必须最后加载，才能盖住上面各模块的桌面版式
+import './styles/mobile.css';
 
 // Data Router 提供可靠的 PUSH / REPLACE / 浏览器前后退拦截，不改变页面结构。
 const router = createBrowserRouter([{ path: '*', element: <App /> }]);

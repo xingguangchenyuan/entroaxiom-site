@@ -164,8 +164,16 @@
 .prose pre code { background: none; padding: 0; color: var(--bone-2); font-size: 0.86rem; }
 .prose hr { border: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--hue), transparent); margin: 2.4em 0; }
 .prose img { max-width: 100%; }
-.table-scroll { overflow-x: auto; }
+.table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
 .prose table { border-collapse: collapse; width: 100%; font-size: 0.94rem; }
+/* 窄屏：表格按内容宽度排版并横向滚动。否则 width:100% 会把中文列压到一行只剩一个字 */
+@media (max-width: 860px) {
+  .prose table { width: max-content; min-width: 100%; }
+}
 .prose th,
 .prose td { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
 .prose th { color: var(--hue-hi); font-weight: 600; }

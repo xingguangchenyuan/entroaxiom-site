@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Entry } from '../../content/corpus';
 import type { ContentType } from '../../content/types';
@@ -61,9 +61,23 @@ interface Props {
  */
 export function StarChart({ entries, hidden, tag, onTag }: Props) {
   const navigate = useNavigate();
+  const stageRef = useRef<HTMLDivElement>(null);
   const stars = useMemo(() => layoutStars(entries), [entries]);
   const [hover, setHover] = useState<Star | null>(null);
   const visible = stars.filter((s) => !hidden.has(s.e.kind));
+
+  // 窄屏上星盘比屏幕宽（星点才点得中）：初始把视界滚到中间，而不是从最左边开始
+  useEffect(() => {
+    const st = stageRef.current;
+    if (!st) return;
+    const center = () => {
+      const over = st.scrollWidth - st.clientWidth;
+      if (over > 8) st.scrollLeft = over / 2;
+    };
+    center();
+    window.addEventListener('resize', center);
+    return () => window.removeEventListener('resize', center);
+  }, [visible.length]);
 
   const lit = useMemo(() => {
     if (tag) return visible.filter((s) => s.e.tags.includes(tag)).sort((a, b) => (a.e.date ?? '').localeCompare(b.e.date ?? ''));
@@ -81,6 +95,7 @@ export function StarChart({ entries, hidden, tag, onTag }: Props) {
 
   return (
     <div className={`chart${lit.length ? ' is-focused' : ''}`}>
+      <div className="chart__stage" ref={stageRef}>
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="chart__svg" role="img" aria-label="内容星盘：角度为模块，半径为时间（越新越靠近中心）">
         <defs>
           <radialGradient id="chart-core">
@@ -130,7 +145,14 @@ export function StarChart({ entries, hidden, tag, onTag }: Props) {
               onMouseLeave={() => setHover(null)}
               onFocus={() => setHover(s)}
               onBlur={() => setHover(null)}
-              onClick={() => navigate(s.e.to)}
+              onClick={() => {
+                // 触屏没有 hover：第一下选中（点亮星座），再点一下才降落
+                if (window.matchMedia('(hover: none)').matches && hover !== s) {
+                  setHover(s);
+                  return;
+                }
+                navigate(s.e.to);
+              }}
               onKeyDown={(ev) => ev.key === 'Enter' && navigate(s.e.to)}
             >
               <circle r={s.r * 3.2} className="chart__halo" />
@@ -139,6 +161,7 @@ export function StarChart({ entries, hidden, tag, onTag }: Props) {
           );
         })}
       </svg>
+      </div>
 
       <div className="chart__card" aria-live="polite">
         {hover ? (
@@ -168,7 +191,10 @@ export function StarChart({ entries, hidden, tag, onTag }: Props) {
             <button type="button" className="text-action" onClick={() => onTag(null)}>解散星座</button>
           </>
         ) : (
-          <p className="chart__hint">把指针停在一颗星上，它会和共享标签的星连成星座。越靠近中心，越接近此刻。</p>
+          <p className="chart__hint">
+            <span className="only-wide">把指针停在一颗星上，它会和共享标签的星连成星座。越靠近中心，越接近此刻。</span>
+            <span className="only-mob">左右滑动星盘，点一颗星看它的摘要；再点一次才降落。越靠近中心，越接近此刻。</span>
+          </p>
         )}
       </div>
     </div>

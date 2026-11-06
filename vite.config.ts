@@ -43,6 +43,9 @@ export default defineConfig(({ mode, command }) => {
       },
     },
     server: {
+      // 工具可能先写临时文件再原子改名；.tmpdir 里的中间文件偶尔会被锁住，
+      // chokidar 去 watch 它们会直接 EBUSY 把 dev server 打挂（Windows 上很常见）
+      watch: { ignored: ['**/.*.tmpdir/**', '**/*.tmp'] },
       proxy: {
         '/api': { target: devBackend, changeOrigin: false },
         '/uploads': { target: devBackend, changeOrigin: false },

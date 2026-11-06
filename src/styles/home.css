@@ -18,7 +18,6 @@
   background: linear-gradient(100deg, var(--sol-hi) 0%, var(--ember) 40%, var(--rose) 70%, var(--nebula) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.hero__lead { margin-top: 26px; max-width: 34em; color: var(--bone-2); font-size: var(--t-lg); line-height: 1.85; animation: rise 1.2s 0.3s var(--ease-out) both; }
 .hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; margin: 34px 0 18px; animation: rise 1.2s 0.45s var(--ease-out) both; }
 .hero__search kbd { font-family: var(--font-mono); font-size: 0.8em; padding: 1px 7px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); }
 .hero__orrery { position: relative; display: grid; place-items: center; animation: fade 1.8s 0.3s both; }
@@ -51,41 +50,53 @@
 /* ---------- 点击星球：直接进模块，不做过渡 ---------- */
 
 .gx__labels { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; pointer-events: none; }
-.gx__slot { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; will-change: transform; }
+.gx__slot {
+  position: absolute; left: 0; top: 0; width: 0; height: 0;
+  pointer-events: none; will-change: transform;
+  /* 透明度是逐帧写在行内样式上的，没有这条就会「啪」地明暗切换（点选星球时最明显） */
+  transition: opacity 0.32s var(--ease-out);
+}
 
+/* 标签做成胶囊：和手机端同一套观感，星球与文字之间的关系一眼能读出来。
+   底部有渐变底衬着星空，文字不用再叠描边阴影。 */
 .gx__label {
   position: absolute; left: 0; top: 0;
-  display: grid; gap: 1px; padding: 3px 5px;
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 5px 12px 5px 10px;
   transform: translateY(-50%);
   pointer-events: auto;
   text-decoration: none;
-  border-radius: 6px;
-  transition: opacity 0.35s var(--ease-out), color 0.3s;
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: rgba(6, 8, 18, 0.66);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: opacity 0.35s var(--ease-out), color 0.3s, border-color 0.3s, background 0.3s;
 }
-.gx__slot[data-side='-1'] .gx__label { transform: translate(-100%, -50%); justify-items: end; text-align: right; }
 
-.gx__row { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.gx__row { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 .gx__dot {
   width: 5px; height: 5px; border-radius: 50%;
-  box-shadow: 0 0 6px 1px currentColor;
+  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--c) 75%, transparent);
   flex: none;
 }
 .gx__zh {
   font-family: var(--font-display);
   font-size: 14px; line-height: 1.25; letter-spacing: 0.06em;
   color: #efe8da;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 12px rgba(0, 0, 0, 0.85);
   white-space: nowrap;
 }
-.gx__en {
-  font-size: 0.6875rem; line-height: 1.4; letter-spacing: 0.2em;
-  color: rgba(214, 226, 250, 0.5);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
-  white-space: nowrap;
+/* 拉丁副名跟着简介一起展开，不占胶囊宽度 */
+.gx__meta-en {
+  font-size: 0.6875rem; letter-spacing: 0.16em;
+  color: rgba(214, 226, 250, 0.52);
+  margin-right: 9px;
 }
-/* 简介：只在选中时展开，用绝对定位避免标签整体跳动 */
+/* 简介：只在选中时展开，用绝对定位避免标签整体跳动。
+   它落在胶囊外面、直接压着星空，所以保留描边阴影保证可读。 */
 .gx__meta {
-  position: absolute; top: 100%; margin-top: 2px;
+  position: absolute; top: 100%; margin-top: 4px;
   font-size: 0.75rem; line-height: 1.5; letter-spacing: 0.02em;
   color: rgba(200, 214, 240, 0.62);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
@@ -94,13 +105,15 @@
   transition: opacity 0.28s var(--ease-out), transform 0.28s var(--ease-out);
   pointer-events: none;
 }
-.gx__slot[data-side='1'] .gx__meta { left: 5px; }
-.gx__slot[data-side='-1'] .gx__meta { right: 5px; }
+.gx__slot[data-side='1'] .gx__meta { left: 12px; }
+.gx__slot[data-side='-1'] .gx__meta { right: 12px; }
+/* 胶囊贴着舞台右边缘时，展开行改成从右往左排，否则会被舞台裁掉 */
+.gx__slot[data-meta='r'] .gx__meta { left: auto; right: 12px; text-align: right; }
 
+.gx__slot[data-active='true'] .gx__label { border-color: color-mix(in srgb, var(--c) 62%, transparent); background: rgba(10, 13, 26, 0.88); }
 .gx__slot[data-active='true'] .gx__zh { color: #fff8e8; }
-.gx__slot[data-active='true'] .gx__en { color: rgba(240, 232, 214, 0.72); }
 .gx__slot[data-active='true'] .gx__meta { opacity: 1; transform: none; }
-.gx__slot[data-active='true'] .gx__dot { box-shadow: 0 0 10px 2px currentColor; }
+.gx__slot[data-active='true'] .gx__dot { box-shadow: 0 0 10px 2px color-mix(in srgb, var(--c) 85%, transparent); }
 .gx__slot[data-dim='true'] .gx__label { opacity: 0.42; }
 
 .gx__label:focus-visible {
@@ -110,7 +123,6 @@
 
 @media (max-width: 720px) {
   .gx__zh { font-size: 13px; }
-  .gx__en { font-size: 0.6875rem; letter-spacing: 0.14em; }
   .gx__meta { font-size: 0.6875rem; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -118,9 +130,11 @@
 }
 
 /* ---------- 首页主体 ---------- */
+/* 显式 minmax(0,1fr)：否则隐式单列会取 max-content，被下方 width:max-content 的彗星跑马灯
+   撑到 4600px，整页所有 section 一起变宽，居中的神谕卡被推到屏幕外。 */
 .home-body {
   width: min(100% - 2 * var(--gutter), var(--maxw)); margin: 0 auto;
-  display: grid; gap: clamp(72px, 10vw, 128px);
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(72px, 10vw, 128px);
   padding-bottom: 80px;
 }
 .home-kicker { color: var(--hue); margin-bottom: 10px; font-size: 0.75rem; }

@@ -31,6 +31,18 @@ export interface GalaxyOptions {
   reduced: boolean;
   mobile: boolean;
   onLabels?: (frames: LabelFrame[]) => void;
+  /**
+   * 标签的占位尺寸（随视口变化）。桌面标签是「中文 + 拉丁 + 简介」三行，
+   * 手机上被压成一枚 36px 高的胶囊，让位算法得知道这个差别，
+   * 否则会按桌面的 18px 行距让位，两个胶囊仍然叠在一起。
+   */
+  labelMetrics?: () => { w: number; h: number };
+  /**
+   * 舞台底部被常驻 UI（手机上的轨道坞）压住的像素数。
+   * 首屏的星系比一屏还高，最低那颗行星的标签会落在坞下面点不到，
+   * 所以让位算法要把这段让出来。
+   */
+  bottomReserve?: () => number;
 }
 
 /* ---------- 常量 ---------- */
@@ -47,6 +59,10 @@ const ORDER: WorldKey[] = ['guestbook', 'essays', 'notes', 'shelf', 'files'];
 const BASE_SIZE: Record<WorldKey, number> = { files: 16, shelf: 14, notes: 12, essays: 11, guestbook: 9 };
 /** 公转周期基准（秒，最内圈）；其余按开普勒第三定律 T ∝ R^1.5 */
 const PERIOD_BASE = 34;
+/** 手机上的公转周期倍数：屏幕小、星球离得近，同样的角速度看着更急 */
+const MOBILE_PERIOD_SCALE = 1.35;
+/** 标签位置的平滑时间常数（秒） */
+const LABEL_EASE = 0.3;
 /** 无交互时的帧间隔（30fps），以及指针离开后继续保持满帧率的时长 */
 const IDLE_FRAME_MS = 1000 / 30;
 const INTERACT_HOLD_MS = 1500;
@@ -182,6 +198,15 @@ export class Galaxy {
   /** 标签最终位置（避让之后），引线与 DOM 都用这一份 */
   private labelPos = new Map<WorldKey, { x: number; y: number; side: 1 | -1 }>();
 
+  /**
+   * 标签位置的平滑值。避让算法算出的是「理想位置」，但它是离散的：
+   * 行星一跨过竖直轴、或者两个标签挤到一起，理想位置会瞬间跳几十像素，
+   * 直接照抄就成了一帧闪过去。所以这里用指数平滑追过去（时间常数 LABEL_EASE）。
+   */
+  private labelSmooth = new Map<WorldKey, { x: number; y: number }>();
+  /** 上次算标签位置的时刻（this.time），用来求真实 dt */
+  private labelAt = 0;
+
   private grain: HTMLCanvasElement | null = null;
 
   constructor(canvas: HTMLCanvasElement, opts: GalaxyOptions) {
@@ -211,7 +236,10 @@ export class Galaxy {
         ring: key === 'shelf',
         moon: key === 'shelf' || key === 'notes',
         R: 0,
-        period: PERIOD_BASE * Math.pow(RATIOS[i], 1.5),
+        period:
+          PERIOD_BASE *
+          (this.opts.mobile ? MOBILE_PERIOD_SCALE : 1) *
+          Math.pow(RATIOS[i], 1.5),
         theta: w.phase,
         phase: (i * 1.7) % (Math.PI * 2),
         flash: 0,
@@ -229,6 +257,8 @@ export class Galaxy {
     const S = Math.max(160, Math.round(cssSize));
     const d = clamp(dpr, 1, 2);
     if (S === this.S && d === this.dpr) return;
+    // 尺寸变了，标签的平滑值是按旧舞台算的，直接丢掉重新落位，不要滑过去
+    this.labelSmooth.clear();
     this.S = S;
     this.dpr = d;
     this.cx = S / 2;
@@ -238,8 +268,10 @@ export class Galaxy {
     this.canvas.style.width = `${S}px`;
     this.canvas.style.height = `${S}px`;
 
-    // 最外轨道占舞台的 0.38（原 0.335）：标签的避让逻辑会把放不下的标签挪到别的方向，所以放大后仍不越界
-    this.rOuter = S * 0.38;
+    // 最外轨道占舞台的 0.38（原 0.335）：标签的避让逻辑会把放不下的标签挪到别的方向，所以放大后仍不越界。
+    // 手机上标签被压成单行胶囊、且没有了右侧文案栏，舞台可以多让一点给轨道（0.46），
+    // 这样同样的画布宽度画出来的星系实际大一圈，而不是外面围一圈空白。
+    this.rOuter = S * (this.opts.mobile ? 0.46 : 0.38);
     const r0 = this.rOuter / RATIOS[RATIOS.length - 1];
     this.coreR = r0 * 1.06;
     // 星盘半径约 1.15 倍最内圈轨道：最里面那颗行星在星盘外缘公转，耀斑则越过前两条轨道
@@ -557,7 +589,16 @@ export class Galaxy {
    */
   private computeLabels(): void {
     const pad = 6;
-    const w = 104;
+    const metrics = this.opts.labelMetrics?.() ?? { w: 104, h: 18 };
+    const w = metrics.w;
+    const lh = metrics.h;
+    // 标签以锚点为中心纵向居中，所以上下各留半个标签高，贴边时不会被切掉
+    const inset = Math.max(14, lh / 2 + 2);
+    const minY = inset;
+    // 手机上底部有一条常驻的轨道坞（.dock，约 60px + 安全区）。舞台是整个正方形，
+    // 最低那颗行星的标签会落在坞下面点不到，所以按实际重叠量让出一条安全带。
+    const bottomReserve = Math.max(0, Math.min(this.S * 0.4, this.opts.bottomReserve?.() ?? 0));
+    const maxY = Math.max(inset, this.S - inset - bottomReserve);
     const raw: { key: WorldKey; x: number; y: number; side: 1 | -1 }[] = [];
     for (const p of this.planets) {
       const dx = p.x - this.cx;
@@ -565,7 +606,8 @@ export class Galaxy {
       const d = Math.hypot(dx, dy) || 1;
       const ux = dx / d;
       const uy = dy / d;
-      const gap = p.radius + 16;
+      // 标签已经是有边框的胶囊，边框本身提供了视觉间隔，锚点再往外推太多就显得疏远
+      const gap = p.radius + 9;
       const ox = this.px * 7;
       const oy = this.py * 7;
       // 径向外侧 → 上 → 下 → 内侧
@@ -577,8 +619,8 @@ export class Galaxy {
         const ay = p.y + vy * gap + oy;
         const side: 1 | -1 = vx >= 0 ? 1 : -1;
         const fitsX = side === 1 ? ax >= pad && ax + w <= this.S - pad : ax - w >= pad && ax <= this.S - pad;
-        const fitsY = ay >= 14 && ay <= this.S - 14;
-        const cand = { x: ax, y: clamp(ay, 14, this.S - 14), side };
+        const fitsY = ay >= minY && ay <= maxY;
+        const cand = { x: ax, y: clamp(ay, minY, maxY), side };
         if (!fallback) fallback = cand;
         if (fitsX && fitsY) {
           best = cand;
@@ -593,13 +635,30 @@ export class Galaxy {
     for (const it of raw) {
       let y = it.y;
       for (const q of placed) {
-        if (Math.abs(q.x - it.x) < 96 && Math.abs(q.y - y) < 17) y = q.y + 18;
+        if (Math.abs(q.x - it.x) < w - 8 && Math.abs(q.y - y) < lh - 1) y = q.y + lh;
       }
-      it.y = clamp(y, 14, this.S - 14);
+      it.y = clamp(y, minY, maxY);
+      // 四个方位都放不下时用的是 fallback（径向外侧），窄屏上它可能比舞台还窄，
+      // 于是标签会顶到画布外面去——按它自己的展开方向夹回舞台内。
+      it.x = it.side === 1
+        ? clamp(it.x, pad, this.S - pad - w)
+        : clamp(it.x, pad + w, this.S - pad);
       placed.push(it);
     }
+    // 理想位置是离散的（换边、让位都会瞬间跳），按真实时间做指数平滑再交给引线和 DOM。
+    // 时间常数取 0.3s：比一帧长得多，跳变会变成一段看得见的滑行；又足够短，
+    // 不会让标签明显落后于自己的行星。
+    const dt = clamp(this.time - this.labelAt, 0, 0.1);
+    this.labelAt = this.time;
+    const k = dt > 0 ? 1 - Math.exp(-dt / LABEL_EASE) : 1;
     this.labelPos.clear();
-    for (const it of raw) this.labelPos.set(it.key, { x: it.x, y: it.y, side: it.side });
+    for (const it of raw) {
+      const prev = this.labelSmooth.get(it.key);
+      const sx = prev ? prev.x + (it.x - prev.x) * k : it.x;
+      const sy = prev ? prev.y + (it.y - prev.y) * k : it.y;
+      this.labelSmooth.set(it.key, { x: sx, y: sy });
+      this.labelPos.set(it.key, { x: sx, y: sy, side: it.side });
+    }
   }
 
   /* ---------- 绘制 ---------- */
