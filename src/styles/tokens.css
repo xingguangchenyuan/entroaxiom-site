@@ -69,6 +69,8 @@
   --t-2xl: clamp(1.8rem, 1.3rem + 1.8vw, 2.6rem);
   --t-3xl: clamp(2.3rem, 1.5rem + 3vw, 3.8rem);
   --t-hero: clamp(2.6rem, 1.4rem + 5vw, 5.8rem);
+  /* 每个页面的标题只有这一个尺寸：随笔、星图、公理共用，翻页时标题不会忽然变大变小 */
+  --t-page-title: clamp(2.2rem, 4.6vw, 4rem);
 
   /* 圆角 */
   --r-sm: 10px;
@@ -86,7 +88,11 @@
 
   /* 布局 */
   --nav-h: 72px;
+  /* 两条量度，各管一件事：
+     --maxw  正文与列表的排版宽度（一行字不超过 ~38 个汉字）；
+     --widew 全景页的展板宽度（星图、公理），只放图与牌，不放长段落。 */
   --maxw: 1200px;
+  --widew: 1360px;
   --readw: 720px;
   --gutter: clamp(18px, 4vw, 56px);
 

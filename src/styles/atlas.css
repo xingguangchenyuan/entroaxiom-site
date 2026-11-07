@@ -2,18 +2,35 @@
    星图：星盘 / 轨迹 / 星云
    ========================================================= */
 
-.atlas-head { text-align: center; margin: 12px auto 26px; max-width: 760px; }
-.atlas-head .latin { color: var(--rose); font-size: var(--t-xs); margin: 0 0 10px; }
+/* 页头是一条铭牌：左边铭文与标题，右边投影方式与演示标记，下面一条发丝线。
+   和随笔/笔记页的页头同一个骨架，翻页时标题不会换位置。 */
+.atlas-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'latin bar'
+    'title bar'
+    'lead bar';
+  align-items: end;
+  gap: 0 32px;
+  text-align: left;
+  margin: 8px 0 26px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.atlas-head .latin { grid-area: latin; color: var(--rose); font-size: var(--t-xs); margin: 0 0 8px; }
 .atlas-head__title {
-  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  grid-area: title;
+  font-size: var(--t-page-title);
+  line-height: 1.02;
   margin: 0;
   background: linear-gradient(90deg, var(--ember-hi), var(--rose), var(--nebula-hi), var(--glacier-hi));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-.atlas-head__lead { color: var(--dust); margin: 12px 0 20px; line-height: 1.8; }
-.atlas-head__bar { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.atlas-head__lead { grid-area: lead; color: var(--dust); margin: 12px 0 0; line-height: 1.8; max-width: 52ch; }
+.atlas-head__bar { grid-area: bar; display: flex; gap: 14px; justify-content: flex-end; align-items: center; flex-wrap: wrap; padding-bottom: 4px; }
 
 .atlas-legend { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px; }
 .atlas-legend__item {
@@ -41,7 +58,8 @@
   align-items: start;
 }
 @media (max-width: 960px) { .chart { grid-template-columns: 1fr; } }
-.chart__svg { width: 100%; max-width: 760px; margin: 0 auto; display: block; overflow: visible; }
+/* 星盘吃满展板宽度（原来卡在 760px，右半边一直空着）：星座的连线和铭文才有地方站 */
+.chart__svg { width: 100%; margin: 0 auto; display: block; overflow: visible; }
 .chart__ring { fill: none; stroke: rgba(255, 255, 255, 0.07); stroke-dasharray: 2 6; }
 .chart__spoke { stroke: rgba(255, 255, 255, 0.08); }
 .chart__label { font-family: var(--font-latin); font-size: 15px; letter-spacing: 0.18em; }

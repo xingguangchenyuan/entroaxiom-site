@@ -9,8 +9,10 @@ interface Props {
 }
 
 /**
- * 模块页头：左边是这颗天体（CSS 绘制的行星，带自转的光影与一颗小卫星），
- * 右边是拉丁铭文、模块名、箴言与数量读数。
+ * 模块页头：一条铭牌带。
+ * 左边是这颗天体（CSS 绘制的行星，带自转的光影与一颗小卫星）；
+ * 中间两栏，左栏是身份（拉丁铭文 + 页名），右栏是这一页的声音（箴言 + 描述）；
+ * 右边是读数（共几篇）与演示标记。
  */
 export function ModuleHeader({ world, total, unit = '篇', children }: Props) {
   return (
@@ -20,19 +22,25 @@ export function ModuleHeader({ world, total, unit = '篇', children }: Props) {
         <span className="mod-head__orbit"><span className="mod-head__moon" /></span>
       </div>
       <div className="mod-head__text">
-        <p className="latin mod-head__latin">
-          {world.latin} · {world.body}
-        </p>
-        <h1 className="mod-head__title display">{world.module}</h1>
-        <p className="mod-head__motto">{world.motto}</p>
-        <p className="mod-head__desc">{world.description}</p>
+        <div className="mod-head__identity">
+          <p className="latin mod-head__latin">
+            {world.latin} · {world.body}
+          </p>
+          <h1 className="mod-head__title display">{world.module}</h1>
+        </div>
+        <div className="mod-head__voice">
+          <p className="mod-head__motto">{world.motto}</p>
+          <p className="mod-head__desc">{world.description}</p>
+        </div>
+      </div>
+      <div className="mod-head__aside">
         {total != null && (
           <p className="readout mod-head__count">
             <span className="led" /> {total} {unit}
           </p>
         )}
+        {children}
       </div>
-      {children && <div className="mod-head__aside">{children}</div>}
     </header>
   );
 }

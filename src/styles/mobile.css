@@ -472,7 +472,9 @@
     min-height: 0;
     align-content: start;
     gap: 0;
-    padding: calc(var(--nav-h) + 10px) 0 20px;
+    /* 桌面版的 hero 用外边距把内容压进 1200 的量度；手机上没有双栏，
+       改由这里的内边距给出同一条左轴（--gutter），不然文字会贴到屏幕边缘 */
+    padding: calc(var(--nav-h) + 10px) var(--gutter) 20px;
   }
 
   .hero__copy {
@@ -739,6 +741,19 @@
     margin-top: 1px;
   }
 
+  /* 手机上两栏合成一栏：铭文 / 标题 / 箴言 / 描述依次往下，不再有竖发丝线 */
+  .mod-head__text {
+    display: block;
+  }
+
+  .mod-head__voice {
+    padding-left: 0;
+  }
+
+  .mod-head__voice::before {
+    display: none;
+  }
+
   .mod-head__latin {
     font-size: 0.75rem;
     letter-spacing: 0.16em;
@@ -767,7 +782,7 @@
   }
 
   .mod-head__count {
-    margin-top: 8px;
+    margin: 0;
     font-size: 0.75rem;
     letter-spacing: 0.12em;
   }
@@ -1019,7 +1034,17 @@
    -------------------------------------------------------------------------- */
 @media (max-width: 860px) {
   .atlas-head {
+    /* 桌面那条铭牌是「左边三行 + 右边控件」的两栏；手机上一列落下来，
+       否则标题会被右侧的 auto 轨道挤成一条竖线 */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'latin'
+      'title'
+      'lead'
+      'bar';
+    gap: 0;
     margin: 0 0 14px;
+    padding-bottom: 14px;
     max-width: none;
     text-align: left;
   }
@@ -1030,12 +1055,14 @@
   }
 
   .atlas-head__lead {
-    margin: 8px 0 14px;
+    margin: 8px 0 0;
     font-size: 0.88rem;
     line-height: 1.7;
   }
 
   .atlas-head__bar {
+    margin-top: 14px;
+    padding-bottom: 0;
     justify-content: flex-start;
     gap: 10px;
   }
@@ -1150,6 +1177,11 @@
 
   ol.tarot-spread {
     display: flex;
+    flex-wrap: nowrap;
+    /* 桌面版这排牌是居中的（七张正好铺满一条）；手机上它变成横向滚动条，
+       居中对齐会让内容从左边溢出到视口外——而且滚不回去，前几张牌永远看不到。
+       这里必须靠左。 */
+    justify-content: flex-start;
     gap: 12px;
     max-width: none;
     margin: 0 calc(var(--gutter) * -1);
@@ -1162,6 +1194,12 @@
   .tarot-slot {
     flex: 0 0 min(68vw, 280px);
     scroll-snap-align: center;
+  }
+
+  /* 手机上用横滑一张张看，牌的弧线先收平，别在一条滑轨里上下错位 */
+  .tarot-slot:nth-child(n) {
+    --rot: 0deg;
+    --dy: 0px;
   }
 
   .tarot__face {

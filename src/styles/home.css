@@ -3,12 +3,17 @@
    ========================================================================== */
 .home { position: relative; }
 
+/* 左轴压在正文量度的左边线上（1200 展板的两端），星仪一侧出血到视口右缘：
+   标题、右栏星仪、下面的内容，共用同一条看不见的轴线 */
 .hero {
   position: relative;
   min-height: 100vh; min-height: 100svh;
-  width: min(100% - 2 * var(--gutter), 1320px); margin: 0 auto;
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.22fr); align-items: center; gap: 24px;
-  padding: calc(var(--nav-h) + 24px) 0 64px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 584px) minmax(420px, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: calc(var(--nav-h) + 24px) 0 64px max(var(--gutter), calc((100% - var(--maxw)) / 2));
 }
 .hero__kicker { color: var(--sol); margin-bottom: 22px; }
 .hero__title { font-size: var(--t-hero); line-height: 1.12; letter-spacing: 0.04em; }
@@ -20,14 +25,22 @@
 }
 .hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; margin: 34px 0 18px; animation: rise 1.2s 0.45s var(--ease-out) both; }
 .hero__search kbd { font-family: var(--font-mono); font-size: 0.8em; padding: 1px 7px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); }
-.hero__orrery { position: relative; display: grid; place-items: center; animation: fade 1.8s 0.3s both; }
+/* 星仪贴着右缘，左留白留给文字那一栏 */
+.hero__orrery { position: relative; display: grid; place-items: center end; animation: fade 1.8s 0.3s both; }
 .hero__cue { position: absolute; left: 50%; bottom: 22px; width: 22px; height: 36px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line-3); }
 .hero__cue span { position: absolute; left: 50%; top: 8px; width: 2px; height: 7px; margin-left: -1px; border-radius: 2px; background: var(--sol); animation: cue 2s ease-in-out infinite; }
 @keyframes cue { 50% { transform: translateY(10px); opacity: 0.2; } }
 
 @media (max-width: 980px) {
-  .hero { grid-template-columns: 1fr; text-align: left; padding-top: calc(var(--nav-h) + 40px); }
-  .hero__orrery { order: -1; }
+  .hero {
+    grid-template-columns: 1fr;
+    text-align: left;
+    /* 单栏时左右都要留白，只靠左内边距会顶到右缘 */
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+    padding-top: calc(var(--nav-h) + 40px);
+  }
+  .hero__orrery { order: -1; place-items: center; }
   .hero__cue { display: none; }
 }
 

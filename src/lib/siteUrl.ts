@@ -2,8 +2,9 @@
  * 站点绝对地址相关的纯函数。vite.config.ts（构建时）和 App.tsx（运行时）共用，所以不能依赖 DOM。
  *
  * 域名通过环境变量 VITE_SITE_URL 配置（例如 https://example.com，只写协议 + 域名 + 可选端口）。
- * 没配置时：构建产物里不会输出 og:image / twitter:image（相对地址对分享抓取器无效，宁可不写），
- * canonical / og:url 回退到当前访问的 origin。
+ * 正式构建缺了它会在 vite.config.ts 里直接中止（分享图不能"悄悄没有"）；
+ * 只有开发服务器允许没有，此时 og:image / twitter:image 整组不输出。
+ * canonical / og:url 在运行时回退到当前访问的 origin。
  */
 
 /** index.html 里用来占位的记号；构建时被替换成 VITE_SITE_URL 或整行删除 */
@@ -31,9 +32,11 @@ export function canonicalUrl(origin: string, pathname: string): string {
 /**
  * 处理 index.html：
  *  - 有站点地址：把所有 __SITE_URL__ 替换成它；
- *  - 没有：把含占位符的整行（og:image / twitter:image）删掉，避免输出一个指向 "__SITE_URL__/…" 的坏地址。
+ *  - 没有：只在开发服务器上会走到这里（正式构建缺它会直接报错中止）。
+ *    这时把 og:image* / twitter:image* 整组删掉 —— 只删含占位符的那两行会留下
+ *    og:image:width / height / alt 这些孤儿声明，抓取器会以为"声明了图却取不到"，比没有更糟。
  */
 export function applySiteUrl(html: string, siteUrl: string | undefined): string {
   if (siteUrl) return html.split(SITE_URL_TOKEN).join(siteUrl);
-  return html.replace(new RegExp(`^[ \\t]*<[^\\n]*${SITE_URL_TOKEN}[^\\n]*\\n`, 'gm'), '');
+  return html.replace(/^[ \t]*<meta\b[^\n]*(?:og:image|twitter:image)[^\n]*\n/gm, '');
 }

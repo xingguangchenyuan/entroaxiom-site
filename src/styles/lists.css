@@ -2,16 +2,20 @@
    列表类页面：模块页头（行星）、工具条、随笔余烬线、笔记冰晶墙、文件陨石带
    ========================================================= */
 
-.page--wide { max-width: 1360px; }
+/* 展板：星图与公理用更宽的一档。.page 的 width 已经算成 1200 了，
+   只加 max-width 是盖不住的，这里要连 width 一起给。 */
+.page--wide { width: min(100% - 2 * var(--gutter), var(--widew)); max-width: var(--widew); }
 
-/* ---------- 模块页头：一颗 CSS 行星 ---------- */
+/* ---------- 模块页头：一颗 CSS 行星 + 一条铭牌带 ----------
+   左边是这颗天体，中间是「铭文 + 标题」和「箴言 + 描述」两栏（竖发丝线分开），
+   右边是读数与演示标记。整条压在一条 1px 基线上，下面的内容立刻开始。 */
 .mod-head {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: clamp(20px, 4vw, 56px);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: clamp(22px, 3.2vw, 44px);
   align-items: center;
-  padding: clamp(18px, 4vw, 40px) 0 clamp(26px, 4vw, 44px);
-  margin-bottom: 18px;
+  padding: clamp(14px, 2vw, 22px) 0 clamp(16px, 2.2vw, 24px);
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--line);
   position: relative;
 }
@@ -24,9 +28,33 @@
   height: 1px;
   background: linear-gradient(90deg, var(--c), transparent);
 }
+/* 两栏：左边只放身份（铭文 + 页名），右边放这一页的声音（箴言 + 描述） */
+.mod-head__text {
+  display: grid;
+  grid-template-columns: clamp(200px, 20vw, 268px) minmax(0, 1fr);
+  column-gap: clamp(22px, 3.4vw, 52px);
+  align-items: center;
+  min-width: 0;
+}
+.mod-head__identity { min-width: 0; }
+.mod-head__voice {
+  position: relative;
+  min-width: 0;
+  padding-left: clamp(20px, 3vw, 44px);
+}
+/* 两栏之间的竖发丝线：从铭文顶部往下淡出 */
+.mod-head__voice::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  background: linear-gradient(180deg, var(--line-2), transparent);
+}
 .mod-head__planet {
   position: relative;
-  width: clamp(110px, 16vw, 168px);
+  width: clamp(92px, 10vw, 132px);
   aspect-ratio: 1;
 }
 .mod-head__sphere {
@@ -100,12 +128,13 @@
 .mod-head__latin {
   color: var(--c);
   font-size: var(--t-xs);
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 .mod-head__title {
-  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-size: var(--t-page-title);
   margin: 0;
-  line-height: 1.05;
+  line-height: 1.02;
+  white-space: nowrap;
   background: linear-gradient(100deg, var(--bone) 30%, var(--c));
   -webkit-background-clip: text;
   background-clip: text;
@@ -115,22 +144,29 @@
   font-family: var(--font-display);
   font-size: var(--t-lg);
   color: var(--bone-2);
-  margin: 10px 0 6px;
+  margin: 0 0 6px;
 }
 .mod-head__desc {
   color: var(--dust);
-  max-width: 56ch;
+  max-width: 46ch;
   margin: 0;
-  line-height: 1.75;
+  line-height: 1.7;
+  font-size: var(--t-sm);
 }
 .mod-head__count {
-  margin-top: 14px;
+  margin: 0;
   display: inline-flex;
   gap: 8px;
   align-items: center;
+  white-space: nowrap;
 }
 .mod-head__count .led { background: var(--c); box-shadow: 0 0 8px var(--c); }
-.mod-head__aside { align-self: start; }
+.mod-head__aside {
+  align-self: center;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
 
 @media (max-width: 720px) {
   .mod-head { grid-template-columns: 1fr; text-align: left; }

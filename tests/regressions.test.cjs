@@ -525,7 +525,9 @@ test('星核: 光图比原图大一圈以容纳拉长的耀斑；星系里星核
 
 test('首页: 星系宽度随右栏、高度受「视口 − 顶栏 − 留白」限制（放大后不顶到下一屏）', () => {
   const css = read('src/styles/home.css');
-  assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1\.22fr\)/);
+  // 文字栏定宽、星仪一方吃剩下的宽度并贴住右缘
+  assert.match(css, /grid-template-columns:\s*minmax\(0, 584px\) minmax\(420px, 1fr\)/);
+  assert.match(css, /padding:\s*calc\(var\(--nav-h\) \+ 24px\) 0 64px max\(var\(--gutter\),\s*calc\(\(100% - var\(--maxw\)\) \/ 2\)\)/);
   assert.match(css, /--size:\s*min\(100%, 760px, calc\(100svh - var\(--nav-h\) - 96px\)\)/);
   assert.match(css, /max-width: 980px\) \{ \.gx \{ --size: min\(94vw, 560px\)/);
 });
@@ -572,17 +574,17 @@ test('paletteShortcut: 打开 / 关闭 / 被其他弹层拦住时不吞浏览器
   assert.equal(paletteShortcut(key('a'), idle).action, 'none');
 });
 
-test('构建: manualChunks 把 Markdown 链（含 vfile-message / vfile-location）归入 markdown，且 vite.config 用的就是它', () => {
+test('构建: 只给 React 切手动块；markdown 链与 KaTeX 交给 Rollup（手动切会让 KaTeX 跟着每篇文章下载）', () => {
   assert.match(read('vite.config.ts'), /manualChunks:\s*chunkFor/);
   const { chunkFor } = runtime(async () => response([]))('./lib/chunkRules');
   const id = (p) => `/project/node_modules/${p}/index.js`;
-  for (const p of ['react-markdown', 'remark-gfm', 'rehype-slug', 'micromark-util-types', 'mdast-util-to-hast', 'hast-util-to-text', 'unified', 'vfile', 'vfile-message', 'vfile-location', 'unist-util-visit']) {
-    assert.equal(chunkFor(id(p)), 'markdown', p);
-  }
-  assert.equal(chunkFor(id('katex')), 'katex');
-  assert.equal(chunkFor(id('rehype-katex')), 'katex');
   assert.equal(chunkFor(id('react-dom')), 'react');
-  assert.equal(chunkFor('C:\\project\\node_modules\\vfile-message\\index.js'), 'markdown'); // Windows 路径
+  assert.equal(chunkFor('C:\\project\\node_modules\\react-dom\\index.js'), 'react'); // Windows 路径
+  // 这两条是被实测推回来的：切了就会冒出 `Circular chunk: katex -> markdown -> katex`，
+  // 并且 markdown 块顶部多一条 `import "./katex-xxx.js"`，无公式的文章也付 259 KB
+  for (const p of ['react-markdown', 'remark-gfm', 'rehype-slug', 'hast-util-to-text', 'vfile-message', 'unist-util-visit', 'katex', 'rehype-katex', 'remark-math']) {
+    assert.equal(chunkFor(id(p)), undefined, p);
+  }
   assert.equal(chunkFor(id('react-markdown-extra')), undefined);
   assert.equal(chunkFor('/project/src/lib/vfile-like.ts'), undefined);
 });
@@ -715,4 +717,93 @@ test('布局: 手机的全栏目菜单是两栏星表，栏间有分隔，底色
   assert.match(bg, /backdrop-filter:\s*none/);
   // 低性能档会把 .glass 统一换成半透明底，这里必须压住它。
   assert.match(mobile, /html\[data-perf='low'\] \.glass\.mobile-menu\s*\{[^}]*background:\s*var\(--menu-bg\)/);
+});
+
+test('版式: 每个页面的标题只有一个尺寸，量度只有两条', () => {
+  const tokens = read('src/styles/tokens.css');
+  // 随笔/星图/公理三个页头以前各自 clamp 到 3.6 / 4.4 / 4.2rem，翻页时标题会忽然变大变小。
+  assert.match(tokens, /--t-page-title:\s*clamp\(2\.2rem,\s*4\.6vw,\s*4rem\)/);
+  for (const f of ['src/styles/lists.css', 'src/styles/atlas.css', 'src/styles/pages.css']) {
+    assert.match(read(f), /font-size:\s*var\(--t-page-title\)/, `${f} 的页标题要取统一字号`);
+  }
+  // 两条量度：正文 1200、展板 1360。
+  assert.match(tokens, /--maxw:\s*1200px/);
+  assert.match(tokens, /--widew:\s*1360px/);
+  assert.match(read('src/styles/lists.css'), /\.page--wide\s*\{\s*width:\s*min\(100% - 2 \* var\(--gutter\),\s*var\(--widew\)\);\s*max-width:\s*var\(--widew\)/);
+});
+
+test('版式: 模块页头是「行星 + 两栏铭牌 + 读数」的一条带子', () => {
+  const css = read('src/styles/lists.css');
+  // 两栏：左边身份（铭文 + 页名），右边声音（箴言 + 描述），中间一条竖发丝线
+  assert.match(css, /\.mod-head__text\s*\{[^}]*grid-template-columns:\s*clamp\(200px,\s*20vw,\s*268px\)\s*minmax\(0,\s*1fr\)/);
+  assert.match(css, /\.mod-head__voice::before\s*\{[^}]*width:\s*1px/);
+  // 页头被压到 ~176px 高（行星 132 + 上下留白），内容提上来一格
+  assert.match(css, /\.mod-head__planet\s*\{[^}]*width:\s*clamp\(92px,\s*10vw,\s*132px\)/);
+  // 读数挪到右侧，与演示标记上下叠放，不再吊在描述下面
+  assert.match(css, /\.mod-head__aside\s*\{[^}]*justify-items:\s*end/);
+  const mobile = read('src/styles/mobile.css');
+  // 手机上两栏合成一栏，竖发丝线收掉
+  assert.match(mobile, /\.mod-head__text\s*\{\s*display:\s*block/);
+  assert.match(mobile, /\.mod-head__voice::before\s*\{\s*display:\s*none/);
+});
+
+test('版式: 星盘吃满展板宽度，公理的七张牌摊成一道弧', () => {
+  // 星盘以前卡在 760px，右半边一直空着
+  assert.ok(!/\.chart__svg\s*\{[^}]*max-width:\s*760px/.test(read('src/styles/atlas.css')),
+    '星盘不应再被 760px 卡住');
+  const pages = read('src/styles/pages.css');
+  // 七张牌按序号偏移：中间最高，两侧依次沉下去并偏转
+  for (let i = 1; i <= 7; i++) assert.match(pages, new RegExp(`\\.tarot-slot:nth-child\\(${i}\\)\\s*\\{[^}]*--dy:`));
+  assert.match(pages, /\.tarot-slot\s*\{[^}]*transform:\s*translateY\(var\(--dy, 0px\)\) rotate\(var\(--rot, 0deg\)\)/);
+  // 手机上先把弧收平，横滑时不上下错位
+  assert.match(read('src/styles/mobile.css'), /\.tarot-slot:nth-child\(n\)\s*\{[^}]*--rot:\s*0deg/);
+});
+
+test('SEO: 正式构建缺 VITE_SITE_URL 直接失败，不再静默丢掉分享图', () => {
+  const vite = read('vite.config.ts');
+  // 以前只 console.warn，产物里就会只剩 og:image:width/height/alt 这些孤儿声明
+  assert.match(vite, /throw new Error\(/);
+  assert.match(vite, /构建缺少 VITE_SITE_URL/);
+  assert.doesNotMatch(vite, /console\.warn\(/);
+  // 仓库自带 .env.production（只有公开域名），正常构建不用手写变量
+  assert.match(read('.env.production'), /^VITE_SITE_URL=https:\/\/entroaxiom\.com$/m);
+  assert.match(read('.gitignore'), /^!\.env\.production$/m);
+  // 没有站点地址时整组 image 声明一起删掉，不留孤儿
+  const { applySiteUrl } = runtime(async () => response([]))('./lib/siteUrl');
+  const html = [
+    '<meta property="og:title" content="t" />',
+    '  <meta property="og:image" content="__SITE_URL__/og-image.png" />',
+    '  <meta property="og:image:width" content="1200" />',
+    '  <meta property="og:image:height" content="630" />',
+    '  <meta name="twitter:image" content="__SITE_URL__/og-image.png" />',
+    '  <meta name="twitter:image:alt" content="a" />',
+    '  <meta name="twitter:card" content="summary_large_image" />',
+  ].join('\n');
+  const out = applySiteUrl(html, undefined);
+  assert.doesNotMatch(out, /og:image|twitter:image/);
+  assert.match(out, /og:title/);
+  assert.match(out, /twitter:card/);
+});
+
+test('性能: KaTeX 只在正文含公式时才下载，不在首屏依赖里', () => {
+  const md = read('src/components/reading/Markdown.tsx');
+  // 静态引入会让每篇详情页都无条件多下 262 KB js + 29 KB css
+  assert.doesNotMatch(md, /^import rehypeKatex/m);
+  assert.doesNotMatch(md, /^import 'katex\/dist\/katex\.min\.css'/m);
+  // 动态引入的是本地入口 katexPlugin.ts：直接 import('rehype-katex') 会被 Rollup
+  // 在 markdown 块里补一条静态副作用引入，按需加载就失效了（见 chunkRules.ts 顶部）
+  assert.match(md, /import\('\.\/katexPlugin'\)/);
+  assert.doesNotMatch(md, /import\('rehype-katex'\)/);
+  const plugin = read('src/components/reading/katexPlugin.ts');
+  assert.match(plugin, /^import rehypeKatex from 'rehype-katex';/m);
+  assert.match(plugin, /^import 'katex\/dist\/katex\.min\.css';/m);
+  assert.match(plugin, /export default rehypeKatex;/);
+  // 挂不挂 remark-math / rehype-katex 由正文内容决定
+  assert.match(md, /containsMath\(body\)/);
+  assert.match(md, /remarkPlugins=\{katex \?/);
+  const { containsMath } = runtime(async () => response([]))('./lib/mathText');
+  assert.equal(containsMath('普通段落，没有公式'), false);
+  assert.equal(containsMath('价格 $5 到 $9'), false);
+  assert.equal(containsMath('行内 $a^2+b^2$ 结束'), true);
+  assert.equal(containsMath('$$\nE=mc^2\n$$'), true);
 });

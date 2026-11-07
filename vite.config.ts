@@ -13,14 +13,27 @@ import { applySiteUrl, normalizeSiteUrl } from './src/lib/siteUrl';
 // .env.local 里的配置完全不会生效（只剩进程环境变量这一条路）。
 const DEFAULT_DEV_BACKEND = 'http://127.0.0.1:8000';
 
-// index.html 里的分享图地址必须是带域名的绝对地址：用 VITE_SITE_URL 在构建时填进去（没配置就整行删掉）
+// index.html 里的分享图地址必须是带域名的绝对地址：用 VITE_SITE_URL 在构建时填进去。
+//
+// 缺了它不能"降级继续构建"：那样产物里 og:image:width/height/alt 和 twitter:card 还在，
+// 唯独 og:image / twitter:image 没了 —— 抓取器会认为卡片声明了图却取不到，比完全没有更糟。
+// 所以正式构建缺 VITE_SITE_URL 直接失败（本地 .env.production 已经写好，正常构建不用管）。
 function siteMeta(siteUrl: string | undefined, isBuild: boolean): Plugin {
   return {
     name: 'entroaxiom-site-meta',
     transformIndexHtml: (html) => applySiteUrl(html, siteUrl),
     configResolved() {
       if (isBuild && !siteUrl) {
-        console.warn('\n[site-meta] 未设置 VITE_SITE_URL（例如 https://example.com）：产物里不会有 og:image / twitter:image 分享图。\n');
+        throw new Error(
+          [
+            '',
+            '[site-meta] 构建缺少 VITE_SITE_URL，已中止。',
+            '  分享卡片（og:image / twitter:image）必须是绝对地址，缺了它线上抓取器拿不到封面图。',
+            '  正式构建：VITE_SITE_URL=https://entroaxiom.com npm run build',
+            '  或者写进 .env.production（已在仓库里）/ .env.production.local（本机私有）。',
+            '',
+          ].join('\n'),
+        );
       }
     },
   };

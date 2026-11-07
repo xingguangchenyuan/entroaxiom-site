@@ -2,34 +2,58 @@
    公理：七张塔罗牌（3D 翻转）
    ========================================================= */
 
-.axioms__head { text-align: center; max-width: 680px; margin: 12px auto 40px; }
-.axioms__head .latin { color: var(--sol); font-size: var(--t-xs); margin: 0 0 10px; }
+/* 页头与随笔/星图同一个骨架：左边铭文与标题，下面一条发丝线，牌阵紧接着摊开 */
+.axioms__head {
+  text-align: left;
+  margin: 8px 0 34px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.axioms__head .latin { color: var(--sol); font-size: var(--t-xs); margin: 0 0 8px; }
 .axioms__title {
-  font-size: clamp(2.6rem, 6vw, 4.2rem);
-  margin: 0 0 16px;
+  font-size: var(--t-page-title);
+  line-height: 1.02;
+  margin: 0 0 14px;
   background: linear-gradient(180deg, var(--sol-hi), var(--sol-lo));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-.axioms__p { color: var(--bone-2); margin: 6px 0; font-family: var(--font-display); }
+.axioms__p { color: var(--bone-2); margin: 6px 0; font-family: var(--font-display); max-width: 60ch; }
 
-.tarot-spread {
+/* 七张牌摊在桌面上：中间一张最高，往两边依次沉下去并各自偏转一点。
+   始终一排——这是「一只手把牌摊开」的弧，折行就散了；牌宽度按展板宽度算，
+   窄屏上一起缩小，而不是挤到第二行去。
+   上下留白是给旋转留的：transform 不参与布局，牌转 6° 后外接框会超出自身盒子，
+   不留白就会压到下面的「第八条公理」。 */
+ol.tarot-spread {
   list-style: none;
-  padding: 0;
+  padding: 10px 0 40px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 22px;
-  max-width: 1180px;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 18px;
+  max-width: var(--widew);
 }
 .tarot-slot {
+  /* (100vw − 两侧留白 − 六个间隔) / 7：正好七张并排，永远不折行 */
+  flex: 0 0 min(172px, calc((100vw - 2 * var(--gutter) - 108px) / 7));
   perspective: 1200px;
+  transform: translateY(var(--dy, 0px)) rotate(var(--rot, 0deg));
   animation: deal 0.8s var(--ease-out) both;
   animation-delay: calc(var(--i) * 90ms);
 }
+.tarot-slot:nth-child(1) { --rot: -6deg; --dy: 22px; }
+.tarot-slot:nth-child(2) { --rot: -4deg; --dy: 9.8px; }
+.tarot-slot:nth-child(3) { --rot: -2deg; --dy: 2.4px; }
+.tarot-slot:nth-child(4) { --rot: 0deg; --dy: 0px; }
+.tarot-slot:nth-child(5) { --rot: 2deg; --dy: 2.4px; }
+.tarot-slot:nth-child(6) { --rot: 4deg; --dy: 9.8px; }
+.tarot-slot:nth-child(7) { --rot: 6deg; --dy: 22px; }
 @keyframes deal {
-  from { opacity: 0; transform: translateY(40px) rotate(calc((var(--i) - 3) * 3deg)); }
+  from { opacity: 0; transform: translateY(calc(40px + var(--dy, 0px))) rotate(calc(var(--rot, 0deg) * 2)); }
+  to { opacity: 1; transform: translateY(var(--dy, 0px)) rotate(var(--rot, 0deg)); }
 }
 .tarot {
   position: relative;
@@ -67,7 +91,18 @@
 .tarot__glyph { width: 62%; color: var(--c); filter: drop-shadow(0 0 10px var(--c)); transition: transform 1.2s var(--ease-out); }
 .tarot-slot:hover .tarot__glyph { transform: rotate(14deg) scale(1.05); }
 .tarot__num { font-size: 1.3rem; color: var(--c); letter-spacing: 0.3em; }
-.tarot__arcana { font-size: 12px; color: var(--bone-2); letter-spacing: 0.25em; }
+/* 牌名是拉丁全大写，最长的是 THE OUROBOROS。七张并排后牌面只有 172 宽，
+   所以字号收到 11.5、字距放到 0.16em；牌够宽时再禁止折行，免得只有这一张
+   掉成两行、三张并排时高度对不齐。1150 以下牌面只剩不到 100 宽，
+   强行不折行会顶出牌框，那种宽度就让它自己折。 */
+.tarot__arcana {
+  font-size: 11.5px;
+  color: var(--bone-2);
+  letter-spacing: 0.16em;
+}
+@media (min-width: 1150px) {
+  .tarot__arcana { white-space: nowrap; }
+}
 .tarot__back {
   transform: rotateY(180deg);
   justify-content: flex-start;
